@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perfil de la Institución - Biblioteca</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <!-- Estilos personalizados -->
+  <link rel="stylesheet" href="CSS/perfil.css">
+</head>
+
+<body class="d-flex">
+
+  <!-- Sidebar mejorado con mejor espaciado y diseño proporcionado -->
+  <div class="sidebar d-flex flex-column flex-shrink-0 bg-dark text-white" style="width: 260px; min-height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000;">
+    <div class="sidebar-header p-4 text-center border-bottom border-secondary">
+      <h4 class="mb-0 fw-bold">Gestión administrativa</h4>
+    </div>
+    <ul class="nav nav-pills flex-column mb-auto px-3 py-4">
+      <li class="nav-item mb-2">
+        <a href="/dashboard" class="nav-link text-white d-flex align-items-center py-3 px-3">
+          <i class="bi bi-house-door fs-5 me-3"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li class="nav-item mb-2">
+        <a href="/libros" class="nav-link text-white d-flex align-items-center py-3 px-3">
+          <i class="bi bi-book fs-5 me-3"></i>
+          <span>Libros</span>
+        </a>
+      </li>
+      <li class="nav-item mb-2">
+        <a href="/miembros" class="nav-link text-white d-flex align-items-center py-3 px-3">
+          <i class="bi bi-people fs-5 me-3"></i>
+          <span>Miembros</span>
+        </a>
+      </li>
+      <li class="nav-item mb-2">
+        <a href="/prestamos" class="nav-link text-white d-flex align-items-center py-3 px-3">
+          <i class="bi bi-journal-check fs-5 me-3"></i>
+          <span>Préstamos</span>
+        </a>
+      </li>
+      <li class="nav-item mb-2">
+        <a href="/perfil" class="nav-link text-white active d-flex align-items-center py-3 px-3">
+          <i class="bi bi-person-circle fs-5 me-3"></i>
+          <span>Perfil</span>
+        </a>
+      </li>
+    </ul>
+    <div class="mt-auto p-3 border-top border-secondary">
+      <button id="logoutButton" class="nav-link btn btn-link text-danger fw-bold w-100 text-start d-flex align-items-center py-3 px-3">
+        <i class="bi bi-box-arrow-right fs-5 me-3"></i>
+        <span>Salir</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Contenedor principal con scroll -->
+  <div class="main-content flex-grow-1 d-flex flex-column" style="margin-left: 260px;">
+    
+    <!-- Navbar superior -->
+    <nav class="navbar-top shadow-sm">
+      <div class="container-fluid px-4 py-3">
+        <div class="row w-100 align-items-center">
+          <div class="col-12">
+            <h2 class="perfil-title mb-0">
+              <i class="bi bi-gear-fill me-2"></i>CONFIGURACIÓN DEL PERFIL
+            </h2>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Contenido principal con scroll -->
+    <div class="perfil-content p-4">
+
+      <!-- Sección: Información de la Institución -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-header bg-primary-gradient text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-building me-2"></i>Información de la Institución
+              </h5>
+            </div>
+            <div class="card-body">
+              <form id="formInstitucion">
+                <div class="row">
+                  
+                  <!-- Logo/Foto de perfil -->
+                  <div class="col-12 col-md-4 text-center mb-4">
+                    <div class="logo-preview-container mb-3">
+                      <img src="/placeholder.svg?height=200&width=200" 
+                           alt="Logo de la institución" 
+                           class="logo-preview" 
+                           id="logoPreview">
+                      <div class="logo-overlay">
+                        <i class="bi bi-camera-fill"></i>
+                      </div>
+                    </div>
+                    <input type="file" class="d-none" id="inputLogo" accept="image/*">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="document.getElementById('inputLogo').click()">
+                      <i class="bi bi-upload me-2"></i>Cambiar Logo
+                    </button>
+                    <p class="text-muted mt-2 small">Tamaño recomendado: 200x200px<br>Formato: JPG, PNG</p>
+                  </div>
+
+                  <!-- Campos de información -->
+                  <div class="col-12 col-md-8">
+                    <div class="mb-3">
+                      <label for="nombreInstitucion" class="form-label fw-bold">
+                        <i class="bi bi-building me-2"></i>Nombre de la Institución
+                      </label>
+                      <input type="text" class="form-control" id="nombreInstitucion" 
+                             value="" required>
+                      <small class="text-muted">Este nombre aparecerá en toda la plataforma</small>
+                    </div>
+
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label for="tipoInstitucion" class="form-label fw-bold">
+                          <i class="bi bi-tag me-2"></i>Tipo de Institución
+                        </label>
+                        <select class="form-select" id="tipoInstitucion" required>
+                          <option value="universidad">Universidad</option>
+                          <option value="colegio">Colegio</option>
+                          <option value="biblioteca">Biblioteca Pública</option>
+                          <option value="instituto">Instituto Técnico</option>
+                        </select>
+                      </div>
+
+                      <div class="col-md-6 mb-3">
+                        <label for="telefonoInstitucion" class="form-label fw-bold">
+                          <i class="bi bi-telephone me-2"></i>Teléfono
+                        </label>
+                        <input type="tel" class="form-control" id="telefonoInstitucion" 
+                               value="" required>
+                      </div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="direccionInstitucion" class="form-label fw-bold">
+                        <i class="bi bi-geo-alt me-2"></i>Dirección
+                      </label>
+                      <input type="text" class="form-control" id="direccionInstitucion" 
+                             value="" required>
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="sitioWeb" class="form-label fw-bold">
+                        <i class="bi bi-globe me-2"></i>Sitio Web
+                      </label>
+                      <input type="url" class="form-control" id="sitioWeb" 
+                             value="" placeholder="https://">
+                    </div>
+
+                    <button type="submit" class="btn btn-success">
+                      <i class="bi bi-check-circle me-2"></i>Guardar Información
+                    </button>
+                  </div>
+
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección: Configuración de Cuenta -->
+      <div class="row mb-4">
+        <div class="col-12 col-lg-6 mb-4">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-secondary-gradient text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-person-circle me-2"></i>Usuario y Correo
+              </h5>
+            </div>
+            <div class="card-body">
+              <form id="formUsuario">
+                <div class="mb-3">
+                  <label for="nombreUsuario" class="form-label fw-bold">
+                    <i class="bi bi-person me-2"></i>Nombre de Usuario
+                  </label>
+                  <input type="text" class="form-control" id="nombreUsuario" 
+                         value="admin_biblioteca" required>
+                  <small class="text-muted">Este es tu usuario para iniciar sesión</small>
+                </div>
+
+                <div class="mb-3">
+                  <label for="emailUsuario" class="form-label fw-bold">
+                    <i class="bi bi-envelope me-2"></i>Correo Electrónico
+                  </label>
+                  <input type="email" class="form-control" id="emailUsuario" 
+                         value="admin@universidad.edu" required>
+                  <small class="text-muted">Correo para notificaciones del sistema</small>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">
+                  <i class="bi bi-save me-2"></i>Actualizar Usuario y Correo
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-lg-6 mb-4">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-warning-gradient text-dark">
+              <h5 class="mb-0">
+                <i class="bi bi-shield-lock me-2"></i>Cambiar Contraseña
+              </h5>
+            </div>
+            <div class="card-body">
+              <form id="formContrasena">
+                <div class="mb-3">
+                  <label for="contrasenaActual" class="form-label fw-bold">
+                    <i class="bi bi-lock me-2"></i>Contraseña Actual
+                  </label>
+                  <div class="input-group">
+                    <input type="password" class="form-control" id="contrasenaActual" required>
+                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('contrasenaActual')">
+                      <i class="bi bi-eye" id="iconContrasenaActual"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label for="contrasenaNueva" class="form-label fw-bold">
+                    <i class="bi bi-lock-fill me-2"></i>Nueva Contraseña
+                  </label>
+                  <div class="input-group">
+                    <input type="password" class="form-control" id="contrasenaNueva" required>
+                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('contrasenaNueva')">
+                      <i class="bi bi-eye" id="iconContrasenaNueva"></i>
+                    </button>
+                  </div>
+                  <small class="text-muted">Mínimo 8 caracteres</small>
+                </div>
+
+                <div class="mb-3">
+                  <label for="contrasenaConfirmar" class="form-label fw-bold">
+                    <i class="bi bi-lock-fill me-2"></i>Confirmar Nueva Contraseña
+                  </label>
+                  <div class="input-group">
+                    <input type="password" class="form-control" id="contrasenaConfirmar" required>
+                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('contrasenaConfirmar')">
+                      <i class="bi bi-eye" id="iconContrasenaConfirmar"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-warning w-100">
+                  <i class="bi bi-key-fill me-2"></i>Cambiar Contraseña
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección: Personalización de la Plataforma -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-header bg-info-gradient text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-palette me-2"></i>Personalización de la Plataforma
+              </h5>
+            </div>
+            <div class="card-body">
+              <form id="formPersonalizacion">
+                <div class="row">
+                  
+                  <div class="col-12 col-md-6 mb-3">
+                    <label for="nombrePlataforma" class="form-label fw-bold">
+                      <i class="bi bi-card-heading me-2"></i>Nombre de la Plataforma
+                    </label>
+                    <input type="text" class="form-control" id="nombrePlataforma" 
+                           value="Sistema de Gestión Bibliotecaria" required>
+                    <small class="text-muted">Título que aparece en el navegador y encabezados</small>
+                  </div>
+
+                  <div class="col-12 col-md-6 mb-3">
+                    <label for="eslogan" class="form-label fw-bold">
+                      <i class="bi bi-quote me-2"></i>Eslogan (Opcional)
+                    </label>
+                    <input type="text" class="form-control" id="eslogan" 
+                           value="Fomentando el amor por la lectura" placeholder="Ingresa un eslogan...">
+                  </div>
+
+                  <div class="col-12 col-md-4 mb-3">
+                    <label for="colorPrimario" class="form-label fw-bold">
+                      <i class="bi bi-palette-fill me-2"></i>Color Primario
+                    </label>
+                    <div class="input-group">
+                      <input type="color" class="form-control form-control-color" id="colorPrimario" value="#003049">
+                      <input type="text" class="form-control" value="#003049" readonly>
+                    </div>
+                  </div>
+
+                  <div class="col-12 col-md-4 mb-3">
+                    <label for="colorSecundario" class="form-label fw-bold">
+                      <i class="bi bi-palette-fill me-2"></i>Color Secundario
+                    </label>
+                    <div class="input-group">
+                      <input type="color" class="form-control form-control-color" id="colorSecundario" value="#023e8a">
+                      <input type="text" class="form-control" value="#023e8a" readonly>
+                    </div>
+                  </div>
+
+                  <div class="col-12 col-md-4 mb-3">
+                    <label for="colorAcento" class="form-label fw-bold">
+                      <i class="bi bi-palette-fill me-2"></i>Color de Acento
+                    </label>
+                    <div class="input-group">
+                      <input type="color" class="form-control form-control-color" id="colorAcento" value="#669bbc">
+                      <input type="text" class="form-control" value="#669bbc" readonly>
+                    </div>
+                  </div>
+
+                  <div class="col-12">
+                    <button type="submit" class="btn btn-info text-white">
+                      <i class="bi bi-brush me-2"></i>Guardar Personalización
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary ms-2" onclick="resetearColores()">
+                      <i class="bi bi-arrow-clockwise me-2"></i>Restablecer Colores
+                    </button>
+                  </div>
+
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección: Vista Previa -->
+      <div class="row">
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-header bg-success-gradient text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-eye me-2"></i>Vista Previa de la Personalización
+              </h5>
+            </div>
+            <div class="card-body text-center py-5">
+              <div class="preview-container">
+                <img src="/placeholder.svg?height=120&width=120" 
+                     alt="Logo preview" 
+                     class="preview-logo mb-3" 
+                     id="logoPreviewSmall">
+                <h2 class="preview-nombre mb-2" id="previewNombreInstitucion">Universidad Nacional de Educación</h2>
+                <h4 class="preview-plataforma text-muted mb-2" id="previewNombrePlataforma">Sistema de Gestión Bibliotecaria</h4>
+                <p class="preview-eslogan fst-italic" id="previewEslogan">Fomentando el amor por la lectura</p>
+                <div class="mt-4">
+                  <span class="badge preview-badge me-2" style="background-color: #003049;">Color Primario</span>
+                  <span class="badge preview-badge me-2" style="background-color: #023e8a;">Color Secundario</span>
+                  <span class="badge preview-badge" style="background-color: #669bbc;">Color de Acento</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Toast de notificaciones -->
+  <div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
+    <div id="toastNotificacion" class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body" id="toastMensaje">
+          Cambios guardados exitosamente
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="JS/perfil.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

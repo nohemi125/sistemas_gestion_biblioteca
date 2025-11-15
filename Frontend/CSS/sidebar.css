@@ -1,0 +1,28 @@
+/* Estilos opcionales para el sidebar - Mantiene los estilos originales */
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.bg-dark {
+  background-color: #212529 !important;
+}
+
+.nav-link {
+  transition: background-color 0.3s ease;
+  padding: 0.75rem 1rem;
+  border-radius: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-link.active {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.nav-link i {
+  margin-right: 0.5rem;
+}

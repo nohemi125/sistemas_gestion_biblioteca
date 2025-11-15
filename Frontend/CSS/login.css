@@ -1,0 +1,130 @@
+/* Body y fondo */
+body {
+  margin: 0;
+  padding: 0;
+  /* background: linear-gradient(135deg, #003049 0%, #023e8a 100%); */
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  min-height: 100vh;
+}
+
+/* Tarjeta de login */
+.login-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Header del login */
+.login-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.login-header i {
+  font-size: 3rem;
+  color: #003049;
+  margin-bottom: 0.5rem;
+}
+
+.login-header h3 {
+  color: #212529;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Labels */
+.form-label {
+  color: #212529;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+/* Input groups */
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 12px;
+  z-index: 10;
+  color: #669bbc;
+  font-size: 1.1rem;
+  pointer-events: none;
+}
+
+.input-group .form-control {
+  padding-left: 2.5rem;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  height: 45px;
+  transition: all 0.3s ease;
+}
+
+.input-group .form-control:focus {
+  border-color: #023e8a;
+  box-shadow: 0 0 0 0.2rem rgba(2, 62, 138, 0.15);
+}
+
+/* Botón de login */
+.btn-login {
+  background: linear-gradient(135deg, #003049 0%, #023e8a 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  margin-top: 1rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.btn-login:hover {
+  background: linear-gradient(135deg, #023e8a 0%, #003049 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(2, 62, 138, 0.3);
+}
+
+.btn-login:active {
+  transform: translateY(0);
+}
+
+/* Mensaje de estado */
+#mensaje {
+  font-size: 0.9rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+#mensaje.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+#mensaje.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  .login-card {
+    padding: 2rem 1.5rem;
+    max-width: 340px;
+  }
+
+  .login-header h3 {
+    font-size: 1.3rem;
+  }
+}

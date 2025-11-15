@@ -1,0 +1,552 @@
+/* Agregando estilos completos del sidebar igual a las otras vistas */
+
+/* Colores principales */
+:root {
+  --color-primary: #003049;
+  --color-secondary: #023e8a;
+  --color-accent: #669bbc;  
+  --color-success: #06d6a0;
+  --color-warning: #ffd166;
+  --color-danger: #ef476f;
+}
+
+/* Reset y base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f0f2f5;
+  overflow-x: hidden;
+}
+
+/* Estilos del sidebar mejorado - manteniendo funcionalidad completa */
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 260px;
+  height: 100vh;
+  background-color: #212529 !important;
+  z-index: 1000;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  padding: 1.5rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.sidebar-header h4 {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: white;
+}
+
+.sidebar .nav {
+  padding: 1rem 0.75rem;
+  flex: 1;
+}
+
+.sidebar .nav-item {
+  margin-bottom: 0.5rem;
+}
+
+.sidebar .nav-link {
+  display: flex;
+  align-items: center;
+  padding: 0.875rem 0.75rem;
+  border-radius: 0.5rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.sidebar .nav-link i {
+  font-size: 1.25rem;
+  margin-right: 0.875rem;
+  width: 20px;
+  text-align: center;
+}
+
+.sidebar .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  transform: translateX(3px);
+}
+
+.sidebar .nav-link.active {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar .mt-auto {
+  margin-top: auto;
+  padding: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar #logoutButton {
+  background: none;
+  border: none;
+  color: #dc3545;
+  padding: 0.875rem 0.75rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+}
+
+.sidebar #logoutButton:hover {
+  background-color: rgba(220, 53, 69, 0.1);
+  transform: translateX(3px);
+}
+
+.sidebar #logoutButton i {
+  font-size: 1.25rem;
+  margin-right: 0.875rem;
+}
+
+/* Scrollbar personalizado del sidebar */
+.sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: #1a1d20;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--color-accent);
+  border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-secondary);
+}
+
+/* Navbar único que combina búsqueda, filtros y botones */
+.navbar-custom {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem 1.5rem;
+}
+
+.navbar-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-box i {
+  position: absolute;
+  left: 12px;
+  color: #6c757d;
+  font-size: 1rem;
+}
+
+.search-box input {
+  padding-left: 40px;
+  border-radius: 0.5rem;
+  border: 1px solid #ddd;
+  transition: all 0.3s ease;
+}
+
+.search-box input:focus {
+  box-shadow: 0 0 0 0.2rem rgba(102, 155, 188, 0.25);
+  border-color: var(--color-accent);
+}
+
+.filter-dropdown {
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #ddd;
+  background-color: white;
+  transition: all 0.3s ease;
+}
+
+.filter-dropdown:focus {
+  box-shadow: 0 0 0 0.2rem rgba(102, 155, 188, 0.25);
+  border-color: var(--color-accent);
+}
+
+/* Botones principales */
+.btn-nuevo-prestamo {
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-nuevo-prestamo:hover {
+  background: #05b386;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(6, 214, 160, 0.4);
+  color: white;
+}
+
+.btn-beneficios {
+  background: var(--color-warning);
+  color: #333;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-beneficios:hover {
+  background: #ffc233;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 209, 102, 0.4);
+  color: #333;
+}
+
+/* Tarjetas de estadísticas */
+.stats-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border-left: 4px solid transparent;
+}
+
+.stats-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.stats-prestados {
+  border-left-color: var(--color-accent);
+}
+
+.stats-vencidos {
+  border-left-color: var(--color-danger);
+}
+
+.stats-devueltos {
+  border-left-color: var(--color-success);
+}
+
+.stats-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.stats-prestados .stats-icon {
+  background: rgba(102, 155, 188, 0.15);
+  color: var(--color-accent);
+}
+
+.stats-vencidos .stats-icon {
+  background: rgba(239, 71, 111, 0.15);
+  color: var(--color-danger);
+}
+
+.stats-devueltos .stats-icon {
+  background: rgba(6, 214, 160, 0.15);
+  color: var(--color-success);
+}
+
+.stats-number {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  color: #333;
+}
+
+.stats-label {
+  margin: 0;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+/* Tabla mejorada */
+.table-responsive {
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.table thead.table-dark {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  color: white;
+}
+
+.table thead th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  padding: 1rem;
+  border: none;
+}
+
+.table tbody tr {
+  transition: all 0.2s ease;
+  background-color: white;
+}
+
+.table tbody tr:hover {
+  background-color: rgba(102, 155, 188, 0.1);
+  transform: scale(1.01);
+}
+
+.table tbody td {
+  padding: 1rem;
+  vertical-align: middle;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(102, 155, 188, 0.05);
+}
+
+/* Badges de estado */
+.badge-estado {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-activo {
+  background: rgba(6, 214, 160, 0.15);
+  color: var(--color-success);
+}
+
+.badge-vencido {
+  background: rgba(239, 71, 111, 0.15);
+  color: var(--color-danger);
+}
+
+.badge-devuelto {
+  background: rgba(102, 155, 188, 0.15);
+  color: var(--color-secondary);
+}
+
+/* Días restantes */
+.dias-restantes {
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.dias-normal {
+  color: var(--color-success);
+}
+
+.dias-vencido {
+  color: var(--color-danger);
+  background: rgba(239, 71, 111, 0.1);
+}
+
+.dias-completo {
+  color: var(--color-secondary);
+}
+
+/* Botón de acciones */
+.btn-action {
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px;
+  transition: all 0.3s ease;
+}
+
+.btn-action:hover {
+  background: var(--color-secondary);
+  color: white;
+}
+
+.btn-action:disabled {
+  background: #ddd;
+  color: #999;
+  cursor: not-allowed;
+}
+
+/* Dropdown items con iconos */
+.dropdown-item {
+  padding: 8px 16px;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background: var(--color-accent);
+  color: white;
+}
+
+.dropdown-item.text-danger:hover {
+  background: var(--color-danger);
+  color: white;
+}
+
+/* Modal headers con gradiente */
+.bg-gradient {
+  background: linear-gradient(135deg, var(--color-warning) 0%, #ffa500 100%);
+}
+
+/* Modales mejorados */
+.modal-content {
+  border-radius: 1rem;
+  border: none;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 1rem;
+  border-bottom: none;
+  padding: 1.5rem;
+}
+
+.modal-body {
+  padding: 2rem;
+}
+
+.modal-footer {
+  border-top: 1px solid #dee2e6;
+  padding: 1rem 2rem;
+}
+
+/* Formularios en modales */
+.modal-body .form-label {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.modal-body .form-control:focus,
+.modal-body .form-select:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 0.2rem rgba(102, 155, 188, 0.25);
+}
+
+/* Alertas personalizadas */
+.alert {
+  border-radius: 8px;
+  border: none;
+}
+
+/* Tabla de beneficios */
+#tablaBeneficios .badge {
+  font-size: 0.9rem;
+  padding: 6px 12px;
+}
+
+/* Ajustes para dispositivos móviles */
+@media (max-width: 768px) {
+  .stats-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .stats-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+  }
+
+  .stats-number {
+    font-size: 1.5rem;
+  }
+
+  .sidebar {
+    width: 200px;
+  }
+
+  .flex-grow-1 {
+    margin-left: 200px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .sidebar {
+    position: absolute;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar.show {
+    transform: translateX(0);
+  }
+
+  .flex-grow-1 {
+    margin-left: 0 !important;
+  }
+}
+
+/* Estilos para autocompletado de miembros y libros */
+#listaMiembros,
+#listaLibros {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 0.5rem;
+  border: 1px solid #dee2e6;
+  background: white;
+}
+
+#listaMiembros .list-group-item,
+#listaLibros .list-group-item {
+  border: none;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0.75rem 1rem;
+  transition: all 0.2s ease;
+}
+
+#listaMiembros .list-group-item:last-child,
+#listaLibros .list-group-item:last-child {
+  border-bottom: none;
+}
+
+#listaMiembros .list-group-item:hover,
+#listaLibros .list-group-item:hover {
+  background-color: rgba(102, 155, 188, 0.1);
+  transform: translateX(4px);
+}
+
+#listaMiembros .list-group-item.text-danger,
+#listaLibros .list-group-item.text-danger {
+  background-color: rgba(239, 71, 111, 0.05);
+  cursor: default;
+}
+
+#listaMiembros .list-group-item.text-danger:hover,
+#listaLibros .list-group-item.text-danger:hover {
+  transform: none;
+}

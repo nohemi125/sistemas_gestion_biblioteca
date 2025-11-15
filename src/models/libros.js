@@ -1,0 +1,69 @@
+const db = require('../config/db');
+
+const Libro = {
+  async obtenerTodos() {
+    const [rows] = await db.query('SELECT id_libro AS id, titulo, autor, isbn, imagen, categoria, cantidad, estado FROM libros');
+    return rows;
+  },
+  
+async obtenerPorId(id) {
+  const [rows] = await db.query("SELECT * FROM libros WHERE id_libro = ?", [id]);
+  return rows[0];
+},
+
+  // Crear libro
+  async crear(datos) {
+    const { titulo, autor, isbn, imagen, categoria, cantidad, estado } = datos;
+
+    const [result] = await db.query(
+      `INSERT INTO libros (titulo, autor, isbn, imagen, categoria, cantidad, estado)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [titulo, autor, isbn, imagen, categoria, cantidad, estado]
+    );
+
+    return { id: result.insertId, ...datos };
+  },
+
+  //  Actualizar libro
+  async actualizar(id, datos) {
+    const { titulo, autor, isbn, imagen, categoria, cantidad, estado } = datos;
+
+    await db.query(
+      `UPDATE libros 
+       SET titulo = ?, autor = ?, isbn = ?, imagen = ?, categoria = ?, cantidad = ?, estado = ? 
+       WHERE id_libro = ?`,
+      [titulo, autor, isbn, imagen, categoria, cantidad, estado, id]
+    );
+  },
+
+  //  Eliminar libro
+async eliminar(id) {
+  const [result] = await db.query('DELETE FROM libros WHERE id_libro = ?', [id]);
+  return result;
+},
+
+
+// Buscar libros por texto y/o categoría
+async buscar(filtro, categoria) {
+  let sql = "SELECT id_libro AS id, titulo, autor, isbn, imagen, categoria, cantidad, estado FROM libros WHERE 1=1";
+  const params = [];
+
+  if (filtro) {
+    sql += " AND (titulo LIKE ? OR autor LIKE ?)";
+    params.push(`%${filtro}%`, `%${filtro}%`);
+  }
+
+  if (categoria) {
+    sql += " AND categoria = ?";
+    params.push(categoria);
+  }
+
+  const [rows] = await db.query(sql, params);
+  return rows; // 👈 Esto debe devolver un array
+}
+
+
+};
+
+
+module.exports = Libro;

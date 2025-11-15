@@ -1,0 +1,128 @@
+     :root {
+       --color-primary: #003049;
+       --color-secondary: #669bbc;
+       --color-accent: #023e8a;
+     }
+
+     body {
+       background-color: #f8f9fa;
+     }
+
+     /* Navbar personalizado */
+     .navbar-custom {
+       background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+       padding: 1rem 0;
+     }
+
+     .search-box {
+       position: relative;
+       width: 100%;
+       max-width: 400px;
+     }
+
+     .search-box input {
+       width: 100%;
+       padding: 0.7rem 1rem 0.7rem 2.5rem;
+       border: none;
+       border-radius: 25px;
+       font-size: 0.95rem;
+       background-color: rgba(255, 255, 255, 0.95);
+       transition: all 0.3s ease;
+     }
+
+     .search-box input:focus {
+       outline: none;
+       box-shadow: 0 0 12px rgba(102, 155, 188, 0.5);
+       background-color: white;
+     }
+
+     .search-box i {
+       position: absolute;
+       left: 1rem;
+       top: 50%;
+       transform: translateY(-50%);
+       color: var(--color-secondary);
+       pointer-events: none;
+     }
+
+     .filter-section {
+       display: flex;
+       gap: 1rem;
+       align-items: center;
+       flex-wrap: wrap;
+     }
+
+     .filter-dropdown {
+       background-color: rgba(255, 255, 255, 0.95);
+       border: none;
+       padding: 0.7rem 1rem;
+       border-radius: 8px;
+       font-size: 0.95rem;
+       min-width: 180px;
+       transition: all 0.3s ease;
+       color: var(--color-primary);
+       font-weight: 500;
+     }
+
+     .filter-dropdown:focus {
+       outline: none;
+       box-shadow: 0 0 12px rgba(102, 155, 188, 0.5);
+     }
+
+     .filter-dropdown option {
+       color: var(--color-primary);
+     }
+
+     .btn-register-custom {
+       background-color: var(--color-secondary);
+       border: none;
+       color: white;
+       padding: 0.7rem 1.5rem;
+       border-radius: 8px;
+       font-weight: 600;
+       transition: all 0.3s ease;
+     }
+
+     .btn-register-custom:hover {
+       background-color: var(--color-primary);
+       transform: translateY(-2px);
+       box-shadow: 0 4px 12px rgba(2, 62, 138, 0.3);
+     }
+
+     .btn-register-custom:active {
+       transform: translateY(0);
+     }
+
+     .navbar-label {
+       color: rgba(255, 255, 255, 0.9);
+       font-weight: 600;
+       font-size: 0.85rem;
+       margin-bottom: 0.3rem;
+       display: block;
+     }
+
+     .filter-group {
+       display: flex;
+       flex-direction: column;
+     }
+
+     @media (max-width: 768px) {
+       .filter-section {
+         flex-direction: column;
+         width: 100%;
+       }
+
+       .search-box {
+         max-width: 100%;
+       }
+
+       .filter-dropdown {
+         width: 100%;
+         min-width: unset;
+       }
+
+       .btn-register-custom {
+         width: 100%;
+       }
+     }

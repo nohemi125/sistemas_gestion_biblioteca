@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Gestión Administrativa</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <!-- Chart.js para gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Estilos personalizados -->
+  <link rel="stylesheet" href="CSS/dashboard.css">
+</head>
+
+<body class="d-flex">
+
+  <!-- Sidebar mejorado con mejor espaciado y diseño proporcionado -->
+  <!-- Sidebar -->
+  <div class="sidebar d-flex flex-column flex-shrink-0 bg-dark text-white" style="width: 260px; min-height: 100vh; position: fixed; top: 0; left: 0; z-index: 1000;">
+    <div class="sidebar-header p-4 text-center border-bottom border-secondary">
+      <h4 class="mb-0 fw-bold">Gestión administrativa</h4>
+    </div>
+    <ul class="nav nav-pills flex-column mb-auto px-3 py-4">
+      <li class="nav-item mb-2">
+        <a href="/dashboard" class="nav-link text-white active d-flex align-items-center py-3 px-3">
+          <i class="bi bi-house-door fs-5 me-3"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li class="nav-item mb-2">
+        <a href="/libros" class="nav-link text-white d-flex align-items-center py-3 px-3">
+          <i class="bi bi-book fs-5 me-3"></i>
+          <span>Libros</span>
+        </a>
+      </li>
+      <li class="nav-item mb-2">
+        <a href="/miembros" class="nav-link text-white d-flex align-items-center py-3 px-3">
+          <i class="bi bi-people fs-5 me-3"></i>
+          <span>Miembros</span>
+        </a>
+      </li>
+      <li class="nav-item mb-2">
+        <a href="/prestamos" class="nav-link text-white d-flex align-items-center py-3 px-3">
+          <i class="bi bi-journal-check fs-5 me-3"></i>
+          <span>Préstamos</span>
+        </a>
+      </li>
+      <li class="nav-item mb-2">
+        <a href="/perfil" class="nav-link text-white d-flex align-items-center py-3 px-3">
+          <i class="bi bi-person-circle fs-5 me-3"></i>
+          <span>Perfil</span>
+        </a>
+      </li>
+    </ul>
+     <li class="mt-auto">
+            <button id="logoutButton" class="nav-link btn btn-link text-danger fw-bold w-100 text-start"  style="padding-left: 1rem;">
+                <i class="bi bi-box-arrow-right me-2"></i> Salir
+            </button>
+        </li>
+  </div>
+
+  <!-- Contenedor principal con scroll -->
+  <div class="main-content flex-grow-1 d-flex flex-column" style="margin-left: 260px;">
+    
+    <!-- Navbar superior -->
+    <nav class="navbar-top shadow-sm">
+      <div class="container-fluid px-4 py-3">
+        <div class="row w-100 align-items-center">
+          
+          <!-- Título Dashboard -->
+          <div class="col-12 col-md-4 mb-2 mb-md-0">
+            <h2 class="dashboard-title mb-0">
+              <i class="bi bi-speedometer2 me-2"></i>DASHBOARD
+            </h2>
+          </div>
+
+          <!-- Fecha y hora actual -->
+          <div class="col-12 col-md-4 text-center mb-2 mb-md-0">
+            <div class="datetime-display">
+              <i class="bi bi-calendar-event me-2"></i>
+              <span id="currentDateTime"></span>
+            </div>
+          </div>
+
+          <!-- Notificaciones -->
+          <div class="col-12 col-md-4 text-end">
+            <div class="notification-box dropdown">
+              <button class="btn notification-btn dropdown-toggle" type="button" id="notificationDropdown" data-bs-toggle="dropdown">
+                <i class="bi bi-bell-fill"></i>
+                <span class="notification-badge">3</span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end notification-menu" aria-labelledby="notificationDropdown">
+                <li class="dropdown-header">Notificaciones Recientes</li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <a class="dropdown-item notification-item" href="#">
+                    <i class="bi bi-exclamation-triangle text-danger me-2"></i>
+                    <div>
+                      <strong>5 préstamos vencidos</strong>
+                      <small class="d-block text-muted">Hace 2 horas</small>
+                    </div>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item notification-item" href="#">
+                    <i class="bi bi-info-circle text-warning me-2"></i>
+                    <div>
+                      <strong>3 préstamos vencen hoy</strong>
+                      <small class="d-block text-muted">Hace 4 horas</small>
+                    </div>
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item notification-item" href="#">
+                    <i class="bi bi-check-circle text-success me-2"></i>
+                    <div>
+                      <strong>10 nuevos libros registrados</strong>
+                      <small class="d-block text-muted">Ayer</small>
+                    </div>
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-center text-primary" href="#">Ver todas</a></li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </nav>
+
+    <!-- Contenido principal con scroll -->
+    <div class="dashboard-content p-4">
+
+      <!-- Tarjetas de contadores -->
+      <div class="row g-2 mb-4">
+        
+        <!-- Préstamos Activos -->
+        <div class="col-6 col-md-4 col-lg-2">
+          <div class="counter-card counter-card-small card-prestamos-activos">
+            <div class="counter-icon">
+              <i class="bi bi-journal-check"></i>
+            </div>
+            <div class="counter-info">
+              <h6 class="counter-label">Préstamos Activos</h6>
+              <h3 class="counter-value">14</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Préstamos Vencidos -->
+        <div class="col-6 col-md-4 col-lg-2">
+          <div class="counter-card counter-card-small card-prestamos-vencidos">
+            <div class="counter-icon">
+              <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <div class="counter-info">
+              <h6 class="counter-label">Préstamos Vencidos</h6>
+              <h3 class="counter-value">2</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Miembros Registrados -->
+        <div class="col-6 col-md-4 col-lg-2">
+          <div class="counter-card counter-card-small card-miembros">
+            <div class="counter-icon">
+              <i class="bi bi-people"></i>
+            </div>
+            <div class="counter-info">
+              <h6 class="counter-label">Miembros Registrados</h6>
+              <h3 class="counter-value">12</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Libros Registrados -->
+        <div class="col-6 col-md-4 col-lg-2">
+          <div class="counter-card counter-card-small card-libros">
+            <div class="counter-icon">
+              <i class="bi bi-book"></i>
+            </div>
+            <div class="counter-info">
+              <h6 class="counter-label">Libros Registrados</h6>
+              <h3 class="counter-value">11</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Beneficios Otorgados -->
+        <div class="col-6 col-md-4 col-lg-2">
+          <div class="counter-card counter-card-small card-beneficios">
+            <div class="counter-icon">
+              <i class="bi bi-gift"></i>
+            </div>
+            <div class="counter-info">
+              <h6 class="counter-label">Beneficios Otorgados</h6>
+              <h3 class="counter-value">5</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Multas Generadas (Total del mes) -->
+        <div class="col-6 col-md-4 col-lg-2">
+          <div class="counter-card counter-card-small card-multas">
+            <div class="counter-icon">
+              <i class="bi bi-cash-coin"></i>
+            </div>
+            <div class="counter-info">
+              <h6 class="counter-label">Multas del Mes</h6>
+              <h3 class="counter-value">$2,450</h3>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Selector de Multas por Mes -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-header bg-primary-gradient text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-cash-stack me-2"></i>Historial de Multas por Mes
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-md-4 mb-3 mb-md-0">
+                  <label class="form-label fw-bold">Seleccionar Mes:</label>
+                  <select class="form-select" id="selectMesMultas">
+                    <option value="2025-01">Enero 2025</option>
+                    <option value="2024-12">Diciembre 2024</option>
+                    <option value="2024-11" selected>Noviembre 2024</option>
+                    <option value="2024-10">Octubre 2024</option>
+                    <option value="2024-09">Septiembre 2024</option>
+                    <option value="2024-08">Agosto 2024</option>
+                  </select>
+                </div>
+                <div class="col-md-8">
+                  <div class="d-flex justify-content-around text-center">
+                    <div class="multas-stat">
+                      <h6 class="text-muted mb-2">Total Multas</h6>
+                      <h3 class="text-danger mb-0" id="totalMultasMes">$2,450</h3>
+                    </div>
+                    <div class="multas-stat">
+                      <h6 class="text-muted mb-2">Multas Generadas</h6>
+                      <h3 class="text-primary mb-0" id="cantidadMultasMes">38</h3>
+                    </div>
+                    <div class="multas-stat">
+                      <h6 class="text-muted mb-2">Multas Pagadas</h6>
+                      <h3 class="text-success mb-0" id="multasPagadas">32</h3>
+                    </div>
+                    <div class="multas-stat">
+                      <h6 class="text-muted mb-2">Pendientes</h6>
+                      <h3 class="text-warning mb-0" id="multasPendientes">6</h3>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráficos -->
+      <div class="row g-4">
+        
+        <!-- Gráfico de Préstamos por Mes -->
+        <div class="col-12 col-lg-8">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-primary-gradient text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-bar-chart-line me-2"></i>Préstamos por Mes (Último Año)
+              </h5>
+            </div>
+            <div class="card-body">
+              <canvas id="graficoPrestamosMes"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gráfico de Préstamos por Categoría -->
+        <div class="col-12 col-lg-4">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-primary-gradient text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-pie-chart me-2"></i>Préstamos por Categoría
+              </h5>
+            </div>
+            <div class="card-body">
+              <canvas id="graficoPrestamosCategoria"></canvas>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="JS/dashboard.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

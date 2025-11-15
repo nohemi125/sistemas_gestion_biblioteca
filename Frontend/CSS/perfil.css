@@ -1,0 +1,373 @@
+/* Estilos para la vista de Perfil */
+
+/* Variables de colores */
+:root {
+  --color-primario: #003049;
+  --color-secundario: #023e8a;
+  --color-acento: #669bbc;
+  --color-texto: #212529;
+  --color-fondo: #f8f9fa;
+}
+
+body {
+  background-color: var(--color-fondo);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  overflow: hidden;
+}
+
+/* Estilos mejorados del sidebar con mejor espaciado y diseño */
+/* Sidebar fijo con mejor diseño y espaciado */
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 260px;
+  height: 100vh;
+  background-color: #212529 !important;
+  z-index: 1000;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  padding: 1.5rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.sidebar-header h4 {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: white;
+}
+
+.sidebar .nav {
+  padding: 1rem 0.75rem;
+  flex: 1;
+}
+
+.sidebar .nav-item {
+  margin-bottom: 0.5rem;
+}
+
+.sidebar .nav-link {
+  display: flex;
+  align-items: center;
+  padding: 0.875rem 0.75rem;
+  border-radius: 0.5rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.sidebar .nav-link i {
+  font-size: 1.25rem;
+  margin-right: 0.875rem;
+  width: 20px;
+  text-align: center;
+}
+
+.sidebar .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  transform: translateX(3px);
+}
+
+.sidebar .nav-link.active {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar .mt-auto {
+  margin-top: auto;
+  padding: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar #logoutButton {
+  background: none;
+  border: none;
+  color: #dc3545;
+  padding: 0.875rem 0.75rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+}
+
+.sidebar #logoutButton:hover {
+  background-color: rgba(220, 53, 69, 0.1);
+  transform: translateX(3px);
+}
+
+.sidebar #logoutButton i {
+  font-size: 1.25rem;
+  margin-right: 0.875rem;
+}
+
+/* Contenedor principal */
+.main-content {
+  margin-left: 260px;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+/* Navbar superior */
+.navbar-top {
+  background: linear-gradient(135deg, var(--color-primario) 0%, var(--color-secundario) 100%);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.perfil-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: white;
+}
+
+/* Contenido del perfil */
+.perfil-content {
+  overflow-y: auto;
+  height: calc(100vh - 80px);
+}
+
+/* Tarjetas */
+.card {
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.card-header {
+  font-weight: 600;
+  border: none;
+  padding: 1rem 1.5rem;
+}
+
+.bg-primary-gradient {
+  background: linear-gradient(135deg, var(--color-primario) 0%, var(--color-secundario) 100%);
+}
+
+.bg-secondary-gradient {
+  background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
+}
+
+.bg-warning-gradient {
+  background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+}
+
+.bg-info-gradient {
+  background: linear-gradient(135deg, #0dcaf0 0%, #0891b2 100%);
+}
+
+.bg-success-gradient {
+  background: linear-gradient(135deg, #198754 0%, #0d6832 100%);
+}
+
+/* Logo preview */
+.logo-preview-container {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 3px solid var(--color-acento);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.logo-preview-container:hover {
+  transform: scale(1.05);
+}
+
+.logo-preview-container:hover .logo-overlay {
+  opacity: 1;
+}
+
+.logo-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.logo-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 48, 73, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.logo-overlay i {
+  font-size: 3rem;
+  color: white;
+}
+
+/* Campos de formulario */
+.form-label {
+  color: var(--color-primario);
+  margin-bottom: 0.5rem;
+}
+
+.form-control,
+.form-select {
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  padding: 0.75rem 1rem;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--color-acento);
+  box-shadow: 0 0 0 0.25rem rgba(102, 155, 188, 0.25);
+}
+
+/* Botones */
+.btn {
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-success {
+  background-color: #198754;
+  border: none;
+}
+
+.btn-success:hover {
+  background-color: #157347;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(25, 135, 84, 0.4);
+}
+
+.btn-primary {
+  background-color: var(--color-primario);
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-secundario);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 48, 73, 0.4);
+}
+
+.btn-warning {
+  background-color: #ffc107;
+  border: none;
+  color: #212529;
+}
+
+.btn-warning:hover {
+  background-color: #ffb300;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+}
+
+.btn-info {
+  background-color: #0dcaf0;
+  border: none;
+}
+
+.btn-info:hover {
+  background-color: #0891b2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(13, 202, 240, 0.4);
+}
+
+/* Vista previa */
+.preview-container {
+  padding: 2rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+}
+
+.preview-logo {
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 3px solid var(--color-acento);
+}
+
+.preview-nombre {
+  color: var(--color-primario);
+  font-weight: 700;
+}
+
+.preview-plataforma {
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.preview-eslogan {
+  color: #6c757d;
+  font-size: 1rem;
+}
+
+.preview-badge {
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+}
+
+/* Toast personalizado */
+.toast {
+  background-color: #198754;
+  min-width: 300px;
+}
+
+.toast.bg-danger {
+  background-color: #dc3545;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 200px;
+  }
+
+  .main-content {
+    margin-left: 200px;
+  }
+
+  .perfil-title {
+    font-size: 1.4rem;
+  }
+
+  .logo-preview-container {
+    width: 150px;
+    height: 150px;
+  }
+}
+
+@media (max-width: 576px) {
+  .sidebar {
+    width: 100%;
+    position: relative;
+    min-height: auto;
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+}
