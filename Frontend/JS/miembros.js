@@ -145,9 +145,9 @@ document.addEventListener("DOMContentLoaded", () => {
           <td>${miembro.celular}</td>
           <td>${new Date(miembro.fecha_inscripcion).toLocaleDateString('es-CO')}</td>
           <td>
-            <i class="bi bi-eye text-primary btn-ver" data-id="${miembro.id_miembro}" style="cursor:pointer; font-size:1.2rem;" title="Ver detalle"></i>
-            <i class="bi bi-pencil-square text-warning btn-editar" data-id="${miembro.id_miembro}" style="cursor:pointer; font-size:1.2rem; margin-left:8px;" title="Editar"></i>
-            <i class="bi bi-trash text-danger btn-eliminar" data-id="${miembro.id_miembro}" style="cursor:pointer; font-size:1.2rem; margin-left:8px;" title="Eliminar"></i>
+              <i class="bi bi-eye text-primary btn-ver" data-id="${miembro.id_miembro}" style="cursor:pointer; font-size:1.2rem;" title="Ver detalle"></i>
+              <i class="bi bi-pencil-square text-warning btn-editar" data-id="${miembro.id_miembro}" style="cursor:pointer; font-size:1.2rem; margin-left:8px;" title="Editar"></i>
+              <i class="bi bi-trash text-danger btn-eliminar" data-id="${miembro.id_miembro}" style="cursor:pointer; font-size:1.2rem; margin-left:8px;" title="Eliminar"></i>
           </td>
         `;
         tablaMiembros.appendChild(fila);
@@ -240,6 +240,17 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         modalConfirmar.hide();
       };
+    }
+    
+    // Enviar notificación manual
+    if (e.target.classList.contains('btn-notify')) {
+      const id = e.target.dataset.id;
+      // Guardar en window para usar al enviar
+      window.notificationTargetId = id;
+      document.getElementById('notiAsunto').value = '';
+      document.getElementById('notiMensaje').value = '';
+      const modal = new bootstrap.Modal(document.getElementById('modalEnviarNotificacion'));
+      modal.show();
     }
   });
 
@@ -432,6 +443,70 @@ function descargarHistorialPrestamos() {
 
   // Inicializar
   cargarMiembros();
+
+  // Manejo del formulario de envío de notificación
+  const formEnviarNoti = document.getElementById('formEnviarNotificacion');
+  if (formEnviarNoti) {
+    formEnviarNoti.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const asunto = document.getElementById('notiAsunto').value.trim();
+      const mensaje = document.getElementById('notiMensaje').value.trim();
+      const via = document.getElementById('notiCanal') ? document.getElementById('notiCanal').value : 'both';
+      const id = window.notificationTargetId;
+      if (!id) return mostrarToast('No se seleccionó miembro', 'danger');
+      try {
+        console.log('Enviando notificación', { id, via, asunto, mensaje });
+        const res = await fetch(`${BASE_URL}/api/miembros/${id}/notify`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ asunto, mensaje, via })
+        });
+        const json = await res.json();
+        if (res.ok) {
+          if (json.resultados) {
+            const requested = via === 'both' ? ['email', 'whatsapp'] : [via];
+            const parts = [];
+            let hasError = false;
+            let allSent = true;
+
+            const mapStatus = (channel, status) => {
+              const m = {
+                enviado: 'Enviado',
+                error: 'Error',
+                no_email: 'Sin email',
+                no_celular: 'Sin celular',
+                faltan_datos: 'Faltan datos',
+                no_solicitado: 'No solicitado'
+              };
+              return m[status] || status;
+            };
+
+            for (const ch of ['email', 'whatsapp']) {
+              if (json.resultados[ch] && json.resultados[ch] !== 'no_solicitado') {
+                const s = json.resultados[ch];
+                parts.push((ch === 'email' ? 'Email' : 'WhatsApp') + ': ' + mapStatus(ch, s));
+                if (s === 'error') hasError = true;
+                if (s !== 'enviado') allSent = false;
+              }
+            }
+
+            const toastType = hasError ? 'danger' : (allSent ? 'success' : 'warning');
+            mostrarToast('Notificación: ' + parts.join(' | '), toastType);
+          } else {
+            mostrarToast('Notificación enviada', 'success');
+          }
+          const modal = bootstrap.Modal.getInstance(document.getElementById('modalEnviarNotificacion'));
+          modal.hide();
+        } else {
+          mostrarToast(json.error || 'Error al enviar notificación', 'danger');
+        }
+      } catch (err) {
+        console.error('Error al enviar notificación:', err);
+        mostrarToast('Error al enviar notificación', 'danger');
+      }
+    });
+  }
 
 
   

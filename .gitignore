@@ -1,5 +1,6 @@
 # Dependencias
 node_modules/
+.wwebjs_auth/
 
 # Variables de entorno (NUNCA subir esto a Git)
 .env

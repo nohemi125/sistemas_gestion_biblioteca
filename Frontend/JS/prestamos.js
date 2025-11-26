@@ -140,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item btn-editar-prestamo" href="#" data-id="${prestamo.id_prestamo}"><i class="bi bi-pencil me-2"></i>Editar</a></li>
                 <li><a class="dropdown-item btn-devolucion" href="#" data-id="${prestamo.id_prestamo}" data-miembro="${prestamo.nombre_miembro}" data-libro="${prestamo.titulo_libro}"><i class="bi bi-check-circle me-2"></i>Registrar Devolución</a></li>
-                <li><a class="dropdown-item text-danger btn-multa" href="#" data-id="${prestamo.id_prestamo}" data-miembro="${prestamo.nombre_miembro}" data-libro="${prestamo.titulo_libro}" data-dias="${Math.abs(diferenciaDias)}"><i class="bi bi-currency-dollar me-2"></i>Enviar Multa</a></li>
+                <li><a class="dropdown-item text-danger btn-multa" href="#" data-id="${prestamo.id_prestamo}" data-miembro="${prestamo.nombre_miembro}" data-libro="${prestamo.titulo_libro}" data-dias="${Math.abs(diferenciaDias)}" data-fecha="${prestamo.fecha_prestamo}"><i class="bi bi-currency-dollar me-2"></i>Enviar Multa</a></li>
               </ul>
             </div>
           `
@@ -159,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item btn-editar-prestamo" href="#" data-id="${prestamo.id_prestamo}"><i class="bi bi-pencil me-2"></i>Editar</a></li>
                 <li><a class="dropdown-item btn-devolucion" href="#" data-id="${prestamo.id_prestamo}" data-miembro="${prestamo.nombre_miembro}" data-libro="${prestamo.titulo_libro}"><i class="bi bi-check-circle me-2"></i>Registrar Devolución</a></li>
-                <li><a class="dropdown-item btn-recordatorio" href="#" data-id="${prestamo.id_prestamo}" data-miembro="${prestamo.nombre_miembro}" data-libro="${prestamo.titulo_libro}"><i class="bi bi-envelope me-2"></i>Enviar Recordatorio</a></li>
+                <li><a class="dropdown-item btn-recordatorio" href="#" data-id="${prestamo.id_prestamo}" data-miembro="${prestamo.nombre_miembro}" data-libro="${prestamo.titulo_libro}" data-fecha="${prestamo.fecha_prestamo}"><i class="bi bi-envelope me-2"></i>Enviar Recordatorio</a></li>
               </ul>
             </div>
           `
@@ -440,11 +440,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
       document.querySelector("#modalRecordatorio .alert-secondary").innerHTML = `
         <strong>Para:</strong> ${miembro}<br>
-        <strong>Préstamo:</strong> #P${String(id).padStart(3, "0")} - ${libro}
+        <strong>Préstamo:</strong> #P${String(id).padStart(3, "0")} - ${libro}<br>
+        <strong>Fecha del préstamo:</strong> ${btn.dataset.fecha ? new Date(btn.dataset.fecha).toLocaleDateString('es-CO') : '-'}
       `
 
       // Guardar ID del préstamo en el formulario
       document.getElementById("formRecordatorio").dataset.prestamoId = id
+
+      // Prefill mensaje con datos del miembro, libro y fecha de préstamo
+      try {
+        const fechaRaw = btn.dataset.fecha
+        const fechaFormateada = fechaRaw ? new Date(fechaRaw).toLocaleDateString('es-CO') : '-'
+        const mensajeDefault = `Estimado/a ${miembro},\n\nLe recordamos que el libro "${libro}" prestado el ${fechaFormateada} debe ser devuelto a la brevedad.\n\nGracias por su colaboración.`
+        const textarea = document.getElementById('mensajeRecordatorio')
+        if (textarea) textarea.value = mensajeDefault
+      } catch (err) {
+        console.warn('No se pudo prefijar el mensaje del recordatorio:', err)
+      }
 
       const modal = new bootstrap.Modal(document.getElementById("modalRecordatorio"))
       modal.show()
@@ -468,6 +480,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Guardar ID del préstamo en el formulario
       document.getElementById("formMulta").dataset.prestamoId = id
+
+      // Prefill mensaje de multa con datos del miembro, libro y fecha de préstamo
+      try {
+        const fechaRaw = btn.dataset.fecha
+        const fechaFormateada = fechaRaw ? new Date(fechaRaw).toLocaleDateString('es-CO') : '-'
+        const mensajeDefault = `Estimado/a ${miembro},\n\nSe ha registrado una multa por retraso en el préstamo del libro "${libro}", prestado el ${fechaFormateada}.\n\nMonto: $${(Number.parseFloat(dias) * 1.0).toFixed(2)}.\n\nPor favor acérquese a la biblioteca para regularizar su situación.`
+        const textarea = document.getElementById('mensajeMulta')
+        if (textarea) textarea.value = mensajeDefault
+      } catch (err) {
+        console.warn('No se pudo prefijar el mensaje de la multa:', err)
+      }
 
       const modal = new bootstrap.Modal(document.getElementById("modalMulta"))
       modal.show()
@@ -599,18 +622,33 @@ document.addEventListener("DOMContentLoaded", () => {
         return
       }
 
+      // Determinar canales seleccionados
+      const enviarEmail = document.getElementById('checkEmail') ? document.getElementById('checkEmail').checked : true
+      const enviarWhatsapp = document.getElementById('checkWhatsapp') ? document.getElementById('checkWhatsapp').checked : false
+
+      if (!enviarEmail && !enviarWhatsapp) {
+        mostrarToast('Seleccione al menos un canal (Email o WhatsApp)', 'warning')
+        return
+      }
+
+      const via = enviarEmail && enviarWhatsapp ? 'both' : (enviarEmail ? 'email' : 'whatsapp')
+
       try {
+        const mensaje = document.getElementById('mensajeRecordatorio') ? document.getElementById('mensajeRecordatorio').value.trim() : ''
         const response = await fetch("/api/emails/recordatorio", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ id_prestamo: prestamoId }),
+          body: JSON.stringify({ id_prestamo: prestamoId, via, mensaje }),
         })
 
         const data = await response.json()
 
         if (response.ok) {
-          mostrarToast(`Recordatorio enviado a ${data.destinatario}`, "success")
+          // Mostrar según canal solicitado
+          if (via === 'email') mostrarToast(`Recordatorio enviado por Email a ${data.destinatario}`, 'success')
+          else if (via === 'whatsapp') mostrarToast(`Recordatorio enviado por WhatsApp (si aplica)`, 'success')
+          else mostrarToast(`Recordatorio enviado (Email + WhatsApp si aplica) a ${data.destinatario}`, 'success')
           
           // Cerrar modal
           const modal = bootstrap.Modal.getInstance(document.getElementById("modalRecordatorio"))
@@ -644,21 +682,37 @@ document.addEventListener("DOMContentLoaded", () => {
         return
       }
 
+      // Determinar canales seleccionados para multa
+      const enviarEmailM = document.getElementById('checkEmail') ? document.getElementById('checkEmail').checked : true
+      const enviarWhatsappM = document.getElementById('checkWhatsapp') ? document.getElementById('checkWhatsapp').checked : false
+
+      if (!enviarEmailM && !enviarWhatsappM) {
+        mostrarToast('Seleccione al menos un canal (Email o WhatsApp)', 'warning')
+        return
+      }
+
+      const viaM = enviarEmailM && enviarWhatsappM ? 'both' : (enviarEmailM ? 'email' : 'whatsapp')
+
       try {
+        const mensajeMulta = document.getElementById('mensajeMulta') ? document.getElementById('mensajeMulta').value.trim() : ''
         const response = await fetch("/api/emails/multa", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({ 
             id_prestamo: prestamoId,
-            monto_multa: parseFloat(montoMulta)
+            monto_multa: parseFloat(montoMulta),
+            via: viaM,
+            mensaje: mensajeMulta
           }),
         })
 
         const data = await response.json()
 
         if (response.ok) {
-          mostrarToast(`Multa de $${data.monto.toFixed(2)} enviada a ${data.destinatario}`, "success")
+          if (viaM === 'email') mostrarToast(`Multa de $${data.monto.toFixed(2)} enviada por Email a ${data.destinatario}`, 'success')
+          else if (viaM === 'whatsapp') mostrarToast(`Multa solicitada por WhatsApp (si aplica)`, 'success')
+          else mostrarToast(`Multa enviada (Email + WhatsApp si aplica) a ${data.destinatario}`, 'success')
           
           // Cerrar modal
           const modal = bootstrap.Modal.getInstance(document.getElementById("modalMulta"))
@@ -683,6 +737,147 @@ document.addEventListener("DOMContentLoaded", () => {
     toast.classList.add(`bg-${tipo}`)
     texto.textContent = mensaje
     new bootstrap.Toast(toast).show()
+  }
+
+
+
+  // ----Funcionalidad: Modal de Beneficios (cargar desde backend + asignar)
+  const btnFiltrarBeneficios = document.getElementById("btnFiltrarBeneficios")
+  const minimoPrestamos = document.getElementById("minimoPrestamos")
+  const diasPeriodo = document.getElementById("diasPeriodo")
+  const minDiasPorPrestamoEl = document.getElementById("minDiasPorPrestamo")
+  const cantidadFiltrada = document.getElementById("cantidadFiltrada")
+  const diasFiltrados = document.getElementById("diasFiltrados")
+  const minDiasFiltradoEl = document.getElementById('minDiasFiltrado')
+  const tablaBeneficiosEl = document.getElementById("tablaBeneficios")
+  const modalBeneficiosEl = document.getElementById("modalBeneficios")
+  const modalAsignarBeneficioEl = document.getElementById("modalAsignarBeneficio")
+  const formAsignarBeneficio = document.getElementById("formAsignarBeneficio")
+
+  async function cargarMiembrosBeneficios(min = 0, dias = 30, minDaysPerLoan = 7) {
+    if (!tablaBeneficiosEl) return
+    cantidadFiltrada.textContent = min
+    diasFiltrados.textContent = dias
+    if (minDiasFiltradoEl) minDiasFiltradoEl.textContent = minDaysPerLoan
+
+    try {
+      const resp = await fetch(`/api/beneficios/miembros?min=${encodeURIComponent(min)}&dias=${encodeURIComponent(dias)}&minDays=${encodeURIComponent(minDaysPerLoan)}`, {
+        credentials: 'include'
+      })
+      if (!resp.ok) {
+        mostrarToast('No se pudo obtener miembros', 'danger')
+        return
+      }
+
+      const miembros = await resp.json()
+      tablaBeneficiosEl.innerHTML = ''
+
+      if (!miembros || miembros.length === 0) {
+        tablaBeneficiosEl.innerHTML = `<tr><td colspan="4" class="text-center text-muted">No se encontraron miembros</td></tr>`
+        return
+      }
+
+      miembros.forEach((m) => {
+        const tr = document.createElement('tr')
+        const nombre = `${m.nombres} ${m.apellidos}`
+        const prestamos = m.prestamos_count || 0
+
+        tr.innerHTML = `
+          <td>
+            <strong>${nombre}</strong><br>
+            <small class="text-muted">ID: ${m.id || m.id_miembro}</small>
+          </td>
+          <td>${m.email || ''}</td>
+          <td><span class="badge bg-success">${prestamos} préstamos</span></td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary btn-asignar-beneficio" data-bs-toggle="modal" data-bs-target="#modalAsignarBeneficio" data-id="${m.id_miembro}" data-nombre="${nombre}" data-prestamos="${prestamos}" data-email="${m.email || ''}">
+              <i class="bi bi-gift me-1"></i>Asignar
+            </button>
+          </td>
+        `
+
+        tablaBeneficiosEl.appendChild(tr)
+      })
+    } catch (error) {
+      console.error('Error al cargar miembros:', error)
+      mostrarToast('Error al cargar miembros', 'danger')
+    }
+  }
+
+  if (btnFiltrarBeneficios) {
+    btnFiltrarBeneficios.addEventListener('click', (e) => {
+      e.preventDefault()
+      const min = Number(minimoPrestamos ? minimoPrestamos.value : 0) || 0
+      const dias = Number(diasPeriodo ? diasPeriodo.value : 30) || 30
+      const minDaysPerLoan = Number(minDiasPorPrestamoEl ? minDiasPorPrestamoEl.value : 7) || 7
+      cargarMiembrosBeneficios(min, dias, minDaysPerLoan)
+    })
+  }
+
+  // Cargar cuando se abre el modal
+  if (modalBeneficiosEl) {
+    modalBeneficiosEl.addEventListener('shown.bs.modal', () => {
+      const min = Number(minimoPrestamos ? minimoPrestamos.value : 0) || 0
+      const dias = Number(diasPeriodo ? diasPeriodo.value : 30) || 30
+      const minDaysPerLoan = Number(minDiasPorPrestamoEl ? minDiasPorPrestamoEl.value : 7) || 7
+      cargarMiembrosBeneficios(min, dias, minDaysPerLoan)
+    })
+  }
+
+  // Delegación: abrir modal de asignación con datos del miembro
+  if (tablaBeneficiosEl && modalAsignarBeneficioEl && formAsignarBeneficio) {
+    tablaBeneficiosEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-asignar-beneficio')
+      if (!btn) return
+
+      const miembroId = btn.dataset.id || ''
+      const nombre = btn.dataset.nombre || ''
+      const prestamosNum = btn.dataset.prestamos || '0'
+
+      const alertDiv = modalAsignarBeneficioEl.querySelector('.alert-success')
+      if (alertDiv) {
+        alertDiv.innerHTML = `<strong>Miembro:</strong> ${nombre}<br><strong>Préstamos en periodo:</strong> ${prestamosNum}`
+      }
+
+      formAsignarBeneficio.dataset.miembroId = miembroId
+      const mensajeInput = document.getElementById('mensajeBeneficio')
+      if (mensajeInput) {
+        mensajeInput.value = `¡Felicidades ${nombre}!\n\nHas sido seleccionado/a para recibir un beneficio especial por tu excelente participación en nuestra biblioteca.\n\nEste periodo has realizado ${prestamosNum} préstamos.\n\nComo reconocimiento, te hemos asignado un beneficio especial.\n\n¡Gracias por ser parte de nuestra comunidad de lectores!`
+      }
+    })
+
+    // Manejar envío del formulario de asignar beneficio (intento POST, fallback simulado)
+    formAsignarBeneficio.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const miembroId = formAsignarBeneficio.dataset.miembroId || ''
+      const tipo = document.getElementById('tipoBeneficio').value
+      const mensaje = document.getElementById('mensajeBeneficio').value
+
+      if (!tipo) {
+        mostrarToast('Seleccione un tipo de beneficio', 'warning')
+        return
+      }
+
+      try {
+        const resp = await fetch('/api/beneficios/asignar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ id_miembro: miembroId, tipo, mensaje }),
+        })
+
+        if (resp.ok) {
+          mostrarToast('Beneficio asignado y notificación enviada', 'success')
+        } else {
+          mostrarToast('Beneficio asignado (simulado) y mensaje listo', 'success')
+        }
+      } catch (err) {
+        mostrarToast('Beneficio asignado (simulado) y mensaje listo', 'success')
+      }
+
+      const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalAsignarBeneficio'))
+      if (modalInstance) modalInstance.hide()
+    })
   }
 
   // Inicializar

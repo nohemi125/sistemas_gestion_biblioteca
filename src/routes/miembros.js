@@ -1,31 +1,39 @@
 const express = require('express');
+const checkAuth = require('../middlewares/checkAuth');
 const {
   obtenerMiembros,
   obtenerMiembroPorId,
   crearMiembro,
   actualizarMiembro,
   eliminarMiembro,
-  buscarMiembros
+  buscarMiembros,
+  enviarNotificacionMiembro
 } = require('../controllers/miembros');
 
 const router = express.Router();
 
-// 🔍 Buscar miembros (por nombre, apellido o correo)
+// Requerir autenticación para las rutas de miembros
+router.use(checkAuth);
+
+//  Buscar miembros (por nombre, apellido o correo)
 router.get('/buscar', buscarMiembros);
 
-// 📋 Obtener todos los miembros
+// Obtener todos los miembros
 router.get('/', obtenerMiembros);
 
-// 🔎 Obtener un miembro por ID
+//  Obtener un miembro por ID
 router.get('/:id', obtenerMiembroPorId);
 
-// ➕ Crear un nuevo miembro
+// Crear un nuevo miembro
 router.post('/', crearMiembro);
 
-// ✏️ Actualizar un miembro
+// Actualizar un miembro
 router.put('/:id', actualizarMiembro);
 
-// ❌ Eliminar un miembro
+//  Eliminar un miembro
 router.delete('/:id', eliminarMiembro);
+
+// Enviar notificación manual a un miembro (email + WhatsApp)
+router.post('/:id/notify', enviarNotificacionMiembro);
 
 module.exports = router;

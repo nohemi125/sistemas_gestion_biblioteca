@@ -204,9 +204,9 @@ body {
 }
 
 .btn-nuevo-prestamo:hover {
-  background: #05b386;
+  background: var(--color-secondary);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(6, 214, 160, 0.4);
+  box-shadow: 0 4px 12px rgba(198, 214, 236, 0.35);
   color: white;
 }
 

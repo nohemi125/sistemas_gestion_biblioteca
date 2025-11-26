@@ -1,6 +1,6 @@
 const Miembro = require('../models/miembros');
 
-// ✅ Obtener todos los miembros
+// Obtener todos los miembros
 const obtenerMiembros = async (req, res) => {
   try {
     const miembros = await Miembro.obtenerTodos();
@@ -11,7 +11,7 @@ const obtenerMiembros = async (req, res) => {
   }
 };
 
-// ✅ Obtener miembro por ID
+//  Obtener miembro por ID
 const obtenerMiembroPorId = async (req, res) => {
   try {
     const { id } = req.params;
@@ -28,7 +28,7 @@ const obtenerMiembroPorId = async (req, res) => {
   }
 };
 
-// ✅ Crear miembro
+//  Crear miembro
 const crearMiembro = async (req, res) => {
   try {
     const nuevoMiembro = await Miembro.crear(req.body);
@@ -39,7 +39,7 @@ const crearMiembro = async (req, res) => {
   }
 };
 
-// ✅ Actualizar miembro
+//  Actualizar miembro
 const actualizarMiembro = async (req, res) => {
   try {
     const { id } = req.params;
@@ -64,6 +64,9 @@ const eliminarMiembro = async (req, res) => {
     res.json({ mensaje: 'Miembro eliminado correctamente' });
   } catch (error) {
     console.error('Error al eliminar miembro:', error);
+    if (error && (error.code === 'MIEMBRO_TIENE_PRESTAMOS' || error.message === 'MIEMBRO_TIENE_PRESTAMOS')) {
+      return res.status(400).json({ error: 'El miembro tiene préstamos o registros relacionados. No se puede eliminar.' });
+    }
     res.status(500).json({ error: 'Error al eliminar el miembro' });
   }
 };
@@ -81,6 +84,74 @@ const buscarMiembros = async (req, res) => {
 };
 
 
+// Enviar notificación manual a un miembro (email + WhatsApp)
+const enviarNotificacionMiembro = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let { asunto, mensaje, via = 'both' } = req.body; // via: 'email' | 'whatsapp' | 'both'
+    via = (via || 'both').toString().toLowerCase();
+
+    console.log(`[notificar] id=${id} via=${via} asunto=${!!asunto} mensaje=${!!mensaje}`);
+
+    const miembro = await Miembro.obtenerPorId(id);
+    if (!miembro) return res.status(404).json({ error: 'Miembro no encontrado' });
+
+    const emailService = require('../utils/emailService');
+    const whatsapp = require('../services/whatsapp');
+
+    const resultados = { email: null, whatsapp: null, solicitado: via };
+
+    // Email
+    if (via === 'both' || via === 'email') {
+      if (!miembro.email) {
+        resultados.email = 'no_email';
+      } else if (!asunto || !mensaje) {
+        resultados.email = 'faltan_datos';
+      } else {
+        try {
+          await emailService.enviarCorreo({
+            destinatario: miembro.email,
+            asunto,
+            mensaje,
+            html: `<p>${mensaje}</p>`
+          });
+          resultados.email = 'enviado';
+        } catch (err) {
+          console.error('Error al enviar correo en notificación manual:', err);
+          resultados.email = 'error';
+        }
+      }
+    } else {
+      resultados.email = 'no_solicitado';
+    }
+
+    // WhatsApp
+    if (via === 'both' || via === 'whatsapp') {
+      if (!miembro.celular) {
+        resultados.whatsapp = 'no_celular';
+      } else if (!mensaje) {
+        resultados.whatsapp = 'faltan_datos';
+      } else {
+        try {
+          await whatsapp.enviarMensaje(miembro.celular, mensaje);
+          resultados.whatsapp = 'enviado';
+        } catch (err) {
+          console.error('Error al enviar WhatsApp en notificación manual:', err);
+          resultados.whatsapp = 'error';
+        }
+      }
+    } else {
+      resultados.whatsapp = 'no_solicitado';
+    }
+
+    return res.json({ mensaje: 'Notificación procesada', resultados });
+  } catch (error) {
+    console.error('Error en enviarNotificacionMiembro:', error);
+    res.status(500).json({ error: 'Error al enviar notificación' });
+  }
+};
+
+
 
 module.exports = {
   obtenerMiembros,
@@ -88,5 +159,6 @@ module.exports = {
   crearMiembro,
   actualizarMiembro,
   eliminarMiembro,
-  buscarMiembros
+  buscarMiembros,
+  enviarNotificacionMiembro
 };

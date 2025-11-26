@@ -34,11 +34,15 @@ app.use(noCache);
 
 // Middlewares
 app.use(cors());
-app.use(bodyParser.json());
-app.use(express.urlencoded({ extended: true }));
+// Aumentar el límite para permitir enviar imágenes en data URLs desde el frontend
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Servir archivos estáticos 
 app.use(express.static(path.join(__dirname, "Frontend")));
+
+// Servir uploads (logos) guardados por multer: src/public/logos -> /uploads/logos/...
+app.use('/uploads', express.static(path.join(__dirname, 'src', 'public')));
 
 // Importar rutas 
 const authRoutes = require("./src/routes/auth");
@@ -46,6 +50,8 @@ const librosRoutes = require("./src/routes/libros");
 const miembrosRoutes = require('./src/routes/miembros');
 const prestamosRoutes = require("./src/routes/prestamos");
 const emailsRoutes = require("./src/routes/emails");
+const beneficiosRoutes = require("./src/routes/beneficios");
+const perfilRoutes = require('./src/routes/perfil');
 
 // Middleware de autenticación
 const checkAuth = require('./src/middlewares/checkAuth');
@@ -56,6 +62,8 @@ app.use("/api/libros", librosRoutes);
 app.use('/api/miembros', miembrosRoutes);
 app.use("/api/prestamos", prestamosRoutes);
 app.use("/api/emails", emailsRoutes);
+app.use("/api/beneficios", beneficiosRoutes);
+app.use('/api/perfil', perfilRoutes);
 
 
 
@@ -93,6 +101,11 @@ app.get("/perfil", checkAuth, (req, res) => {
 
 // Puerto
 const PORT = 3000;
+
+// Iniciar WhatsApp Web al arrancar para mostrar QR en consola (sesión LocalAuth)
+const { iniciarWhatsApp } = require('./src/services/whatsapp');
+iniciarWhatsApp().catch(err => console.error('No se pudo iniciar WhatsApp al arrancar:', err));
+
 app.listen(PORT, () => {
-  console.log(` Servidor corriendo en http://localhost:${PORT}`);
+    console.log(` Servidor corriendo en http://localhost:${PORT}`);
 });

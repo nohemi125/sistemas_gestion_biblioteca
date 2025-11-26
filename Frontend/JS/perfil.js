@@ -1,168 +1,552 @@
-// Función para mostrar/ocultar contraseña
-function togglePassword(fieldId) {
-  const field = document.getElementById(fieldId)
-  const icon = document.getElementById("icon" + fieldId.charAt(0).toUpperCase() + fieldId.slice(1))
 
-  if (field.type === "password") {
-    field.type = "text"
-    icon.classList.remove("bi-eye")
-    icon.classList.add("bi-eye-slash")
-  } else {
-    field.type = "password"
-    icon.classList.remove("bi-eye-slash")
-    icon.classList.add("bi-eye")
+// Función reutilizable para mostrar mensajes en modal
+function showModalMessage(title, message, type = 'primary') {
+  const modalEl = document.getElementById('modalMensaje');
+  const header = document.getElementById('modalMensajeHeader');
+  const titleEl = document.getElementById('modalMensajeTitulo');
+  const bodyEl = document.getElementById('modalMensajeBody');
+
+  if (!modalEl) {
+    // Si el modal no existe, caer de vuelta a alert
+    alert(title + " - " + message);
+    return;
   }
+
+  header.classList.remove('bg-success', 'bg-danger', 'bg-primary', 'text-white');
+  if (type === 'success') header.classList.add('bg-success', 'text-white');
+  else if (type === 'danger') header.classList.add('bg-danger', 'text-white');
+  else header.classList.add('bg-primary', 'text-white');
+
+  if (titleEl) titleEl.textContent = title || '';
+  if (bodyEl) bodyEl.textContent = message || '';
+
+  const bsModal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+  bsModal.show();
 }
 
-// Vista previa del logo en tiempo real
-document.getElementById("inputLogo")?.addEventListener("change", (e) => {
-  const file = e.target.files[0]
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      document.getElementById("logoPreview").src = event.target.result
-      document.getElementById("logoPreviewSmall").src = event.target.result
+
+// MAPA
+// =========================
+
+// Crear el mapa en el contenedor
+let map = L.map("mapContainer").setView([4.5709, -74.2973], 6); // Colombia por defecto
+
+// Capa base del mapa (OpenStreetMap)
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+}).addTo(map);
+
+// Marcador dinámico
+let marker = null;
+
+// Geocoding helper: busca una dirección y coloca el marcador fijo
+async function geocodeAddress(direccion) {
+  direccion = (direccion || '').trim();
+  if (!direccion) return null;
+
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(direccion)}`;
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    if (!data || data.length === 0) return null;
+    const lat = parseFloat(data[0].lat);
+    const lon = parseFloat(data[0].lon);
+
+    // Mover mapa y fijar marcador (no draggable)
+    map.setView([lat, lon], 17);
+    if (marker) {
+      marker.setLatLng([lat, lon]);
+    } else {
+      marker = L.marker([lat, lon]).addTo(map);
     }
-    reader.readAsDataURL(file)
+
+    // Guardar lat/lng en los inputs ocultos del formulario
+    const latInput = document.getElementById('latInstitucion');
+    const lngInput = document.getElementById('lngInstitucion');
+    if (latInput) latInput.value = lat;
+    if (lngInput) lngInput.value = lon;
+
+    return { lat, lon };
+  } catch (err) {
+    console.error('Error buscando la dirección:', err);
+    return null;
   }
-})
-
-// Actualizar vista previa en tiempo real
-document.getElementById("nombreInstitucion")?.addEventListener("input", function () {
-  document.getElementById("previewNombreInstitucion").textContent = this.value || "Nombre de la Institución"
-})
-
-document.getElementById("nombrePlataforma")?.addEventListener("input", function () {
-  document.getElementById("previewNombrePlataforma").textContent = this.value || "Nombre de la Plataforma"
-})
-
-document.getElementById("eslogan")?.addEventListener("input", function () {
-  document.getElementById("previewEslogan").textContent = this.value || "Sin eslogan"
-})
-
-// Actualizar colores en vista previa
-document.getElementById("colorPrimario")?.addEventListener("input", function () {
-  this.nextElementSibling.value = this.value
-  document.documentElement.style.setProperty("--color-primario", this.value)
-})
-
-document.getElementById("colorSecundario")?.addEventListener("input", function () {
-  this.nextElementSibling.value = this.value
-  document.documentElement.style.setProperty("--color-secundario", this.value)
-})
-
-document.getElementById("colorAcento")?.addEventListener("input", function () {
-  this.nextElementSibling.value = this.value
-  document.documentElement.style.setProperty("--color-acento", this.value)
-})
-
-// Restablecer colores por defecto
-function resetearColores() {
-  document.getElementById("colorPrimario").value = "#003049"
-  document.getElementById("colorSecundario").value = "#023e8a"
-  document.getElementById("colorAcento").value = "#669bbc"
-
-  document.documentElement.style.setProperty("--color-primario", "#003049")
-  document.documentElement.style.setProperty("--color-secundario", "#023e8a")
-  document.documentElement.style.setProperty("--color-acento", "#669bbc")
-
-  mostrarToast("Colores restablecidos a valores por defecto", "success")
 }
 
-// Función para mostrar notificaciones toast
-function mostrarToast(mensaje, tipo = "success") {
-  const toast = document.getElementById("toastNotificacion")
-  const toastMensaje = document.getElementById("toastMensaje")
+// Ejecutar geocoding cuando el usuario presiona Enter en el campo o cuando el campo cambia
+const direccionEl = document.getElementById('direccionInstitucion');
+if (direccionEl) {
+  direccionEl.addEventListener('keydown', async (ev) => {
+    if (ev.key === 'Enter') {
+      ev.preventDefault();
+      await geocodeAddress(direccionEl.value);
+    }
+  });
+  direccionEl.addEventListener('change', async () => {
+    await geocodeAddress(direccionEl.value);
+  });
+}
 
-  toastMensaje.textContent = mensaje
 
-  if (tipo === "success") {
-    toast.classList.remove("bg-danger")
-    toast.classList.add("bg-success")
+
+// Mostrar vista previa inmediata al seleccionar logo
+const inputLogoEl = document.getElementById('inputLogo');
+if (inputLogoEl) {
+  inputLogoEl.addEventListener('change', (ev) => {
+    const file = ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const src = evt.target.result;
+      const lp = document.getElementById('logoPreview');
+      const lps = document.getElementById('logoPreviewSmall');
+      if (lp) lp.src = src;
+      if (lps) lps.src = src;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+
+
+// CAMBIOS DE DATOS DE INSTITUCIÓN
+document.getElementById("formInstitucion").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const formData = new FormData();
+  formData.append("nombre", document.getElementById("nombreInstitucion").value);
+  formData.append("telefono", document.getElementById("telefonoInstitucion").value);
+  formData.append("direccion", document.getElementById("direccionInstitucion").value);
+
+  const logo = document.getElementById("inputLogo").files[0];
+  if (logo) {
+    formData.append("logo", logo);
+  }
+  // adjuntar lat/lng si existen en los inputs ocultos
+  const latHidden = document.getElementById('latInstitucion');
+  const lngHidden = document.getElementById('lngInstitucion');
+  if (latHidden && latHidden.value) formData.append('lat', latHidden.value);
+  if (lngHidden && lngHidden.value) formData.append('lng', lngHidden.value);
+
+  const res = await fetch("/api/perfil/institucion", {
+    method: "POST",
+    body: formData
+  });
+
+  const data = await res.json();
+  console.log("Respuesta del servidor:", data);
+  // Mostrar resultado en modal en lugar de alert (usa la función global `showModalMessage`)
+
+  if (res.ok) {
+    // backend devuelve 
+    const saved = data.data || null;
+    if (saved) {
+      // actualizar vista previa con los datos guardados
+      document.getElementById("previewNombreInstitucion").textContent = saved.nombre || document.getElementById("previewNombreInstitucion").textContent;
+      document.getElementById("previewNombrePlataforma").textContent = saved.plataforma || document.getElementById("previewNombrePlataforma").textContent;
+      document.getElementById("previewEslogan").textContent = saved.eslogan || document.getElementById("previewEslogan").textContent;
+      // teléfono y dirección
+      const telEl = document.getElementById('previewTelefono');
+      const dirEl = document.getElementById('previewDireccion');
+      if (telEl) telEl.querySelector('span').textContent = saved.telefono || document.getElementById('telefonoInstitucion').value || 'Teléfono no definido';
+      if (dirEl) dirEl.querySelector('span').textContent = saved.direccion || document.getElementById('direccionInstitucion').value || 'Dirección no definida';
+
+      if (saved.logo) {
+        let logoPath;
+        if (saved.logo.startsWith('/')) {
+          logoPath = '/uploads' + saved.logo;
+        } else {
+          logoPath = `/uploads/logos/${saved.logo}`;
+        }
+        const lp = document.getElementById('logoPreview');
+        const lps = document.getElementById('logoPreviewSmall');
+        if (lp) lp.src = logoPath;
+        if (lps) lps.src = logoPath;
+      }
+    }
+
+    showModalMessage('Éxito', data.mensaje || 'Guardado correctamente', 'success');
   } else {
-    toast.classList.remove("bg-success")
-    toast.classList.add("bg-danger")
+    showModalMessage('Error', (data && data.mensaje) || 'Error guardando', 'danger');
   }
+});
 
-  const bsToast = window.bootstrap.Toast.getOrCreateInstance(toast)
-  bsToast.show()
+
+
+// ==== CARGA LA VISTA PREVIA DE DATOS GUARDADOS
+async function cargarVistaPrevia() {
+  try {
+    const res = await fetch("/api/perfil/institucion");
+    const resp = await res.json();
+    // Backend responde { data: institucion } o { mensaje: 'Sin datos aún', data: null }
+    const row = resp && resp.data ? resp.data : null;
+    if (!row) return;
+
+    // Llenar textos (model usa campos: nombre, telefono, direccion, logo)
+    document.getElementById("previewNombreInstitucion").textContent = row.nombre || "Sin nombre";
+    // Si tienes un campo plataforma en la BD, ajusta aquí. Usamos nombre como fallback
+    document.getElementById("previewNombrePlataforma").textContent = row.plataforma || row.nombre || "Sin nombre";
+    document.getElementById("previewEslogan").textContent = row.eslogan || "";
+
+    // Rellenar también los campos del formulario para que persistan hasta que se cambien
+    const nombreInput = document.getElementById('nombreInstitucion');
+    const telefonoInput = document.getElementById('telefonoInstitucion');
+    const direccionInput = document.getElementById('direccionInstitucion');
+    if (nombreInput) nombreInput.value = row.nombre || '';
+    if (telefonoInput) telefonoInput.value = row.telefono || '';
+    if (direccionInput) direccionInput.value = row.direccion || '';
+
+    // Logo (se sirve en /uploads/logos/filename)
+    if (row.logo) {
+      // row.logo puede ser el nombre del archivo ('logo.png') o una ruta ('/logos/logo.png')
+      let logoUrl;
+      if (row.logo.startsWith('/')) {
+        // si se almacena como '/logos/filename'
+        logoUrl = '/uploads' + row.logo;
+      } else {
+        logoUrl = `/uploads/logos/${row.logo}`;
+      }
+      const lps = document.getElementById("logoPreviewSmall");
+      const lp = document.getElementById("logoPreview");
+      if (lp) lp.src = logoUrl;
+      if (lps) lps.src = logoUrl;
+    }
+    // Si la respuesta incluye coordenadas, fijarlas en el mapa y en los inputs ocultos
+    const latCandidates = ['lat', 'latitude', 'latitud'];
+    const lngCandidates = ['lng', 'lon', 'longitude', 'longitud'];
+    let latVal = null;
+    let lngVal = null;
+    for (const key of latCandidates) if (row[key] != null) { latVal = parseFloat(row[key]); break; }
+    for (const key of lngCandidates) if (row[key] != null) { lngVal = parseFloat(row[key]); break; }
+    // Evitar pasar null/undefined a Leaflet: usar Number.isFinite tras parseFloat
+    if (Number.isFinite(latVal) && Number.isFinite(lngVal)) {
+      const latInput = document.getElementById('latInstitucion');
+      const lngInput = document.getElementById('lngInstitucion');
+      if (latInput) latInput.value = latVal;
+      if (lngInput) lngInput.value = lngVal;
+      // colocar marcador fijo
+      try {
+        map.setView([latVal, lngVal], 17);
+        if (marker) marker.setLatLng([latVal, lngVal]); else marker = L.marker([latVal, lngVal]).addTo(map);
+      } catch (mapErr) {
+        console.warn('No se pudo fijar la vista del mapa con las coordenadas:', latVal, lngVal, mapErr);
+      }
+    }
+      // teléfono y dirección
+      const telEl = document.getElementById('previewTelefono');
+      const dirEl = document.getElementById('previewDireccion');
+      if (telEl) telEl.querySelector('span').textContent = row.telefono || 'Teléfono no definido';
+      if (dirEl) dirEl.querySelector('span').textContent = row.direccion || 'Dirección no definida';
+
+  } catch (error) {
+    console.log("Error cargando vista previa:", error);
+  }
 }
 
-// Formulario de información de la institución
-document.getElementById("formInstitucion")?.addEventListener("submit", (e) => {
-  e.preventDefault()
 
-  // Aquí iría la lógica para guardar los datos en el backend
-  console.log("[v0] Guardando información de la institución...")
 
-  mostrarToast("Información de la institución guardada exitosamente", "success")
-})
+// CAMBIAR CORREO PARA INICIAR SESIÓN EN EL SISTEMA
+// Inicialización de estado del formulario de usuario. Se cargará desde el servidor.
+window._perfil_initial = { nombre: '', correo: '' };
 
-// Formulario de usuario y correo
-document.getElementById("formUsuario")?.addEventListener("submit", (e) => {
-  e.preventDefault()
+// Cargar datos del usuario autenticado y poblar el formulario
+async function cargarUsuario() {
+  try {
+    const res = await fetch('/api/perfil/usuario');
+    const json = await res.json();
+    if (res.ok && json.ok && json.data) {
+      const row = json.data;
+      const nameInput = document.getElementById('nombreUsuario');
+      const emailInput = document.getElementById('correoUsuario');
+      if (nameInput) nameInput.value = row.nombre || row.usuario || '';
+      if (emailInput) emailInput.value = row.correo || '';
+      window._perfil_initial = { nombre: nameInput ? nameInput.value : '', correo: emailInput ? emailInput.value : '' };
+    } else {
+      // fallback: mantener valores actuales del DOM
+      const nameInput = document.getElementById('nombreUsuario');
+      const emailInput = document.getElementById('correoUsuario');
+      window._perfil_initial = { nombre: nameInput ? nameInput.value : '', correo: emailInput ? emailInput.value : '' };
+    }
+  } catch (err) {
+    console.warn('No se pudieron cargar los datos del usuario:', err);
+    const nameInput = document.getElementById('nombreUsuario');
+    const emailInput = document.getElementById('correoUsuario');
+    window._perfil_initial = { nombre: nameInput ? nameInput.value : '', correo: emailInput ? emailInput.value : '' };
+  }
+}
 
-  const usuario = document.getElementById("nombreUsuario").value
-  const email = document.getElementById("emailUsuario").value
+document.getElementById("formUsuario").addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  console.log("[v0] Actualizando usuario:", usuario, "email:", email)
+    const nombreUsuario = document.getElementById("nombreUsuario").value.trim();
+    const correoUsuario = document.getElementById("correoUsuario").value.trim();
 
-  mostrarToast("Usuario y correo actualizados correctamente", "success")
-})
+    const msj = document.getElementById("mensajeUsuario");
 
-// Formulario de cambio de contraseña
-document.getElementById("formContrasena")?.addEventListener("submit", function (e) {
-  e.preventDefault()
+    // Si el usuario no cambió ni el nombre ni el correo, mostrar aviso y no enviar
+    if (window._perfil_initial && nombreUsuario === window._perfil_initial.nombre && correoUsuario === window._perfil_initial.correo) {
+      const warnHtml = `
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          No hubo cambios: el usuario y el correo son los mismos.
+        </div>`;
+      if (msj) msj.innerHTML = warnHtml;
+      else showModalMessage('Atención', 'No hubo cambios: el usuario y el correo son los mismos.', 'danger');
+      return;
+    }
+    const resp = await fetch("/api/perfil/cambiar-correo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nombreUsuario, correoUsuario })
+    });
+    const data = await resp.json();
 
-  const contrasenaActual = document.getElementById("contrasenaActual").value
-  const contrasenaNueva = document.getElementById("contrasenaNueva").value
-  const contrasenaConfirmar = document.getElementById("contrasenaConfirmar").value
+    if (data.ok) {
+      const successHtml = `
+        <div class="alert alert-success">
+          <i class="bi bi-check-circle me-2"></i>
+          Datos actualizados correctamente.
+        </div>`;
+      if (msj) msj.innerHTML = successHtml;
+      else showModalMessage('Éxito', 'Datos actualizados correctamente', 'success');
+      // Mantener los valores en los campos del formulario (último usuario/correo cambiado)
+      try {
+        const nameInput = document.getElementById('nombreUsuario');
+        const emailInput = document.getElementById('correoUsuario');
+        if (nameInput) nameInput.value = nombreUsuario;
+        if (emailInput) emailInput.value = correoUsuario;
+        // Actualizar referencia inicial para futuros checks
+        if (window._perfil_initial) {
+          window._perfil_initial.nombre = nombreUsuario;
+          window._perfil_initial.correo = correoUsuario;
+        }
+      } catch (e) {
+        // si algo falla, no interrumpir la UX
+        console.warn('No se pudieron actualizar los campos de usuario en el DOM', e);
+      }
+    } else {
+      const errorHtml = `
+        <div class="alert alert-danger">
+          <i class="bi bi-exclamation-circle me-2"></i>
+          Error: ${data.message}
+        </div>`;
+      if (msj) msj.innerHTML = errorHtml;
+      else showModalMessage('Error', data.message || 'Error actualizando', 'danger');
+    }
+  });
 
-  // Validar que la contraseña tenga al menos 8 caracteres
-  if (contrasenaNueva.length < 8) {
-    mostrarToast("La nueva contraseña debe tener al menos 8 caracteres", "danger")
-    return
+
+
+
+
+// ====MOSTRAR / OCULTAR CONTRASEÑA ======
+function ocultarPass(fieldId) {
+  const input = document.getElementById(fieldId);
+  if (!input) return;
+
+  const iconId = 'icon' + fieldId.charAt(0).toUpperCase() + fieldId.slice(1);
+  const icon = document.getElementById(iconId);
+
+  if (input.type === 'password') {
+    input.type = 'text';
+    if (icon) {
+      icon.classList.remove('bi-eye');
+      icon.classList.add('bi-eye-slash');
+    }
+  } else {
+    input.type = 'password';
+    if (icon) {
+      icon.classList.remove('bi-eye-slash');
+      icon.classList.add('bi-eye');
+    }
+  }
+}
+
+
+// ===FUNCION CAMBIAR DE CONTRASEÑA===
+const formContrasena = document.getElementById("formContrasena");
+
+if (formContrasena) {
+  formContrasena.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const actual = document.getElementById("contrasenaActual").value;
+    const nueva = document.getElementById("contrasenaNueva").value;
+    const confirmar = document.getElementById("contrasenaConfirmar").value;
+
+    // Validacion de coinciden
+    if (nueva !== confirmar) {
+      const msjPass = document.getElementById('mensajeContrasena');
+      const errHtml = `
+        <div class="alert alert-danger">
+          <i class="bi bi-exclamation-circle me-2"></i>
+          La nueva contraseña no coincide.
+        </div>`;
+      if (msjPass) msjPass.innerHTML = errHtml; else alert('La nueva contraseña no coincide.');
+      return;
+    }
+
+    // Validacion de contraseña robusta
+    const regexContrasena = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+
+    if (!regexContrasena.test(nueva)) {
+      const msjPass = document.getElementById('mensajeContrasena');
+      const errHtml = `
+        <div class="alert alert-danger">
+          <i class="bi bi-exclamation-circle me-2"></i>
+          La contraseña debe tener mínimo 8 caracteres, incluir al menos una letra y un número.
+        </div>`;
+      if (msjPass) msjPass.innerHTML = errHtml; else alert('La contraseña debe tener mínimo 8 caracteres, incluir al menos una letra y un número.');
+      return;
+    }
+
+    try {
+      const respuesta = await fetch("/api/perfil/cambiar-contrasena", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actual, nueva })
+      });
+
+      const data = await respuesta.json();
+
+      const msjPass = document.getElementById('mensajeContrasena');
+      if (respuesta.ok) {
+        const okHtml = `
+          <div class="alert alert-success">
+            <i class="bi bi-check-circle me-2"></i>
+            ${data.mensaje || 'Contraseña cambiada correctamente'}
+          </div>`;
+        if (msjPass) msjPass.innerHTML = okHtml; else alert(data.mensaje || 'Contraseña cambiada correctamente');
+        // limpiar campos
+        try {
+          document.getElementById('contrasenaActual').value = '';
+          document.getElementById('contrasenaNueva').value = '';
+          document.getElementById('contrasenaConfirmar').value = '';
+        } catch (e) {}
+      } else {
+        const errHtml = `
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            ${data.mensaje || 'No se pudo cambiar la contraseña'}
+          </div>`;
+        if (msjPass) msjPass.innerHTML = errHtml; else alert(data.mensaje || 'No se pudo cambiar la contraseña');
+      }
+
+    } catch (err) {
+      console.error('Error al cambiar contraseña:', err);
+      const msjPass = document.getElementById('mensajeContrasena');
+      const errHtml = `
+        <div class="alert alert-danger">
+          <i class="bi bi-exclamation-circle me-2"></i>
+          Error cambiando contraseña
+        </div>`;
+      if (msjPass) msjPass.innerHTML = errHtml; else alert('Error cambiando contraseña');
+    }
+  });
+}
+
+// Ejecutar al cargar la página
+cargarVistaPrevia();
+cargarUsuario();
+
+
+
+
+
+// Archivo: multa.js
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  const formMulta = document.getElementById("formMultaConfig");
+  const mensajeMulta = document.getElementById("mensajeMultaConfig");
+
+  // Función para mostrar mensajes
+  const mostrarMensaje = (texto, tipo = "success") => {
+    mensajeMulta.innerHTML = `<div class="alert alert-${tipo}">${texto}</div>`;
+    setTimeout(() => mensajeMulta.innerHTML = "", 4000);
+  };
+
+  // Obtener configuración actual de multa al cargar la página
+  const cargarMulta = async () => {
+    try {
+      const res = await fetch("/api/perfil/multa");
+      const data = await res.json();
+      if (data.ok && data.data) {
+        document.getElementById("valorMulta").value = data.data.valor_multa || "1.00";
+        document.getElementById("diasTolerancia").value = data.data.dias_tolerancia || "0";
+      }
+    } catch (error) {
+      console.error("Error al cargar la multa:", error);
+    }
+  };
+
+  cargarMulta();
+
+
+
+  // FORMULARIO GUARDAR MULTA
+  formMulta.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const valorMulta = document.getElementById("valorMulta").value;
+    const diasTolerancia = document.getElementById("diasTolerancia").value;
+
+    try {
+      const res = await fetch("/api/perfil/multa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ valor_multa: valorMulta, dias_tolerancia: diasTolerancia })
+      });
+
+      const data = await res.json();
+      if (data.ok) {
+        mostrarMensaje("Configuración de multa guardada correctamente.", "success");
+      } else {
+        mostrarMensaje(data.mensaje || "Error al guardar configuración.", "danger");
+      }
+    } catch (error) {
+      console.error("Error al guardar multa:", error);
+      mostrarMensaje("Error al conectar con el servidor.", "danger");
+    }
+  });
+
+});
+
+
+
+
+
+
+// FORMIULARIO SMTP AUTOMÁTICO
+const proveedor = document.getElementById("smtpProveedor");
+const extra = document.getElementById("extraConfig");
+const host = document.getElementById("smtpHost");
+const puerto = document.getElementById("smtpPuerto");
+
+proveedor.addEventListener("change", () => {
+  const value = proveedor.value;
+
+  if (value === "gmail") {
+    extra.style.display = "none";
+    host.value = "smtp.gmail.com";
+    puerto.value = 587;
+  } 
+  
+  else if (value === "outlook") {
+    extra.style.display = "none";
+    host.value = "smtp.office365.com";
+    puerto.value = 587;
   }
 
-  // Validar que las contraseñas coincidan
-  if (contrasenaNueva !== contrasenaConfirmar) {
-    mostrarToast("Las contraseñas no coinciden", "danger")
-    return
+  else if (value === "yahoo") {
+    extra.style.display = "none";
+    host.value = "smtp.mail.yahoo.com";
+    puerto.value = 465;
   }
 
-  console.log("[v0] Cambiando contraseña...")
-
-  // Limpiar campos
-  this.reset()
-
-  mostrarToast("Contraseña cambiada exitosamente", "success")
-})
-
-// Formulario de personalización
-document.getElementById("formPersonalizacion")?.addEventListener("submit", (e) => {
-  e.preventDefault()
-
-  const nombrePlataforma = document.getElementById("nombrePlataforma").value
-  const eslogan = document.getElementById("eslogan").value
-  const colorPrimario = document.getElementById("colorPrimario").value
-  const colorSecundario = document.getElementById("colorSecundario").value
-  const colorAcento = document.getElementById("colorAcento").value
-
-  console.log("[v0] Guardando personalización:", {
-    nombrePlataforma,
-    eslogan,
-    colorPrimario,
-    colorSecundario,
-    colorAcento,
-  })
-
-  mostrarToast("Personalización guardada exitosamente", "success")
-})
-
-// Botón de salir
-document.getElementById("logoutButton")?.addEventListener("click", () => {
-  if (confirm("¿Estás seguro de que deseas cerrar sesión?")) {
-    console.log("[v0] Cerrando sesión...")
-    window.location.href = "/login"
+  else if (value === "otro") {
+    extra.style.display = "block";
+    host.value = "";
+    puerto.value = "";
   }
-})
+});

@@ -116,6 +116,8 @@
     </div>
   </div>
 
+ 
+
   <!-- Modal Registrar / Editar Miembro -->
   <div class="modal fade" id="modalMiembro" tabindex="-1" aria-labelledby="modalMiembroLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -209,6 +211,41 @@
       </div>
     </div>
   </div>
+
+        <!-- Modal Enviar Notificación (Email / WhatsApp) -->
+        <div class="modal fade" id="modalEnviarNotificacion" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">Enviar Notificación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+              </div>
+              <div class="modal-body">
+                <form id="formEnviarNotificacion">
+                  <div class="mb-3">
+                    <label class="form-label">Canal</label>
+                    <select id="notiCanal" class="form-select">
+                      <option value="both">Email y WhatsApp (ambos)</option>
+                      <option value="email">Solo Email</option>
+                      <option value="whatsapp">Solo WhatsApp</option>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Asunto</label>
+                    <input id="notiAsunto" class="form-control" placeholder="Asunto (si aplica)">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Mensaje</label>
+                    <textarea id="notiMensaje" class="form-control" rows="4" required></textarea>
+                  </div>
+                  <div class="d-grid">
+                    <button class="btn btn-primary" type="submit">Enviar</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
 
   <!-- Modal Detalle del Miembro -->
   <div class="modal fade" id="modalDetalleMiembro" tabindex="-1" aria-hidden="true">
