@@ -1,0 +1,9 @@
+/* Frontend/CSS/variables.css */
+:root {
+  --bg: #ffffff;
+  --primario:#003049;
+  --secuendario: #023e8a;
+    --acento: #669bbc;
+  --shadow: rgba(0,0,0,0.06);
+}
+

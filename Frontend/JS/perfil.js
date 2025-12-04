@@ -130,7 +130,8 @@ document.getElementById("formInstitucion").addEventListener("submit", async (e) 
 
   const res = await fetch("/api/perfil/institucion", {
     method: "POST",
-    body: formData
+      body: formData,
+      credentials: 'include'
   });
 
   const data = await res.json();
@@ -243,6 +244,47 @@ async function cargarVistaPrevia() {
   }
 }
 
+// Además cargar la personalización guardada (nombrePlataforma, eslogan, colores)
+async function cargarPersonalizacionEnPreview() {
+  try {
+    const res = await fetch('/api/perfil/personalizacion');
+    const json = await res.json();
+    // Si el endpoint devuelve { ok: true, data: {...} }
+    const data = (json && json.ok && json.data) ? json.data : (json && json.data) ? json.data : json;
+    if (!data) return;
+
+    if (data.nombrePlataforma) {
+      const el = document.getElementById('previewNombrePlataforma');
+      if (el) el.textContent = data.nombrePlataforma;
+      // No sobreescribir el título principal de la vista previa (nombre de la institución)
+      // Solo actualizar el input del formulario
+      const nombreInput = document.getElementById('nombrePlataforma');
+      if (nombreInput) nombreInput.value = data.nombrePlataforma;
+    }
+    if (data.eslogan) {
+      const el = document.getElementById('previewEslogan');
+      if (el) el.textContent = data.eslogan;
+      const esloganInput = document.getElementById('eslogan');
+      if (esloganInput) esloganInput.value = data.eslogan;
+    }
+
+    // Colores
+    try {
+      const badges = document.querySelectorAll('.preview-badge');
+      if (data.colorPrimario && badges[0]) badges[0].style.backgroundColor = data.colorPrimario;
+      if (data.colorSecundario && badges[1]) badges[1].style.backgroundColor = data.colorSecundario;
+      if (data.colorAcento && badges[2]) badges[2].style.backgroundColor = data.colorAcento;
+      // También actualizar inputs si existen
+      if (data.colorPrimario && document.getElementById('colorPrimario')) document.getElementById('colorPrimario').value = data.colorPrimario;
+      if (data.colorSecundario && document.getElementById('colorSecundario')) document.getElementById('colorSecundario').value = data.colorSecundario;
+      if (data.colorAcento && document.getElementById('colorAcento')) document.getElementById('colorAcento').value = data.colorAcento;
+    } catch (e) {}
+
+  } catch (err) {
+    console.warn('No se pudo cargar personalización para preview:', err);
+  }
+}
+
 
 
 // CAMBIAR CORREO PARA INICIAR SESIÓN EN EL SISTEMA
@@ -294,11 +336,12 @@ document.getElementById("formUsuario").addEventListener("submit", async (e) => {
       else showModalMessage('Atención', 'No hubo cambios: el usuario y el correo son los mismos.', 'danger');
       return;
     }
-    const resp = await fetch("/api/perfil/cambiar-correo", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombreUsuario, correoUsuario })
-    });
+      const resp = await fetch("/api/perfil/cambiar-correo", {
+        method: "POST",
+        credentials: 'include',
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombreUsuario, correoUsuario })
+      });
     const data = await resp.json();
 
     if (data.ok) {
@@ -403,6 +446,7 @@ if (formContrasena) {
     try {
       const respuesta = await fetch("/api/perfil/cambiar-contrasena", {
         method: "POST",
+        credentials: 'include',
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ actual, nueva })
       });
@@ -448,6 +492,8 @@ if (formContrasena) {
 // Ejecutar al cargar la página
 cargarVistaPrevia();
 cargarUsuario();
+// Cargar personalización (nombrePlataforma, eslogan, colores) para que persista tras recargar
+cargarPersonalizacionEnPreview();
 
 
 
@@ -469,7 +515,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Obtener configuración actual de multa al cargar la página
   const cargarMulta = async () => {
     try {
-      const res = await fetch("/api/perfil/multa");
+      const res = await fetch("/api/perfil/multa", { credentials: 'include' });
       const data = await res.json();
       if (data.ok && data.data) {
         document.getElementById("valorMulta").value = data.data.valor_multa || "1.00";
@@ -494,6 +540,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await fetch("/api/perfil/multa", {
         method: "POST",
+        credentials: 'include',
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ valor_multa: valorMulta, dias_tolerancia: diasTolerancia })
       });
@@ -548,5 +595,124 @@ proveedor.addEventListener("change", () => {
     extra.style.display = "block";
     host.value = "";
     puerto.value = "";
+  }
+});
+
+
+
+// FUNCION PARA MOSTRRAR EL CODIGO QR DE WHATSAPP
+async function mostrarQR() {
+  const res = await fetch("/api/wpp/qr");
+  const data = await res.json();
+
+  if (data.ok) {
+    document.getElementById("qrImage").src = data.qr;
+    document.getElementById("qrContainer").style.display = "block";
+  } else {
+    alert(data.message);
+  }
+}
+
+
+
+// PERSONALIZACUION DE COLORES Y ESLOGAN
+const form = document.getElementById("formPersonalizacion");
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const data = {
+    nombrePlataforma: document.getElementById('nombrePlataforma').value,
+    eslogan: document.getElementById('eslogan').value,
+    colorPrimario: document.getElementById('colorPrimario').value,
+    colorSecundario: document.getElementById('colorSecundario').value,
+    colorAcento: document.getElementById('colorAcento').value,
+  };
+
+  const req = await fetch("/api/perfil/personalizacion", {
+    method: "POST",
+    credentials: 'include',
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(data)
+  });
+
+  const res = await req.json();
+  // Actualizar vista previa con los valores guardados (o con los valores del formulario como fallback)
+  const nombrePlataformaGuardado = (res && res.data && (res.data.nombrePlataforma || res.data.nombre)) || document.getElementById('nombrePlataforma').value;
+  const esloganGuardado = (res && res.data && res.data.eslogan) || document.getElementById('eslogan').value;
+
+  const previewPlataformaEl = document.getElementById('previewNombrePlataforma');
+  const previewEsloganEl = document.getElementById('previewEslogan');
+  const previewNombreInstitucionEl = document.getElementById('previewNombreInstitucion');
+  if (previewPlataformaEl) previewPlataformaEl.textContent = nombrePlataformaGuardado;
+  if (previewEsloganEl) previewEsloganEl.textContent = esloganGuardado;
+  // No sobreescribir el título principal de la vista previa (nombre de la institución)
+
+  // Actualizar colores en las badgets de la vista previa
+  const badges = document.querySelectorAll('.preview-badge');
+  try {
+    const cp = document.getElementById('colorPrimario').value;
+    const cs = document.getElementById('colorSecundario').value;
+    const ca = document.getElementById('colorAcento').value;
+    if (badges[0]) badges[0].style.backgroundColor = cp;
+    if (badges[1]) badges[1].style.backgroundColor = cs;
+    if (badges[2]) badges[2].style.backgroundColor = ca;
+  } catch (e) {
+    // ignorar si no existen inputs
+  }
+
+  // Mostrar modal de resultado (usar la misma función que en otras vistas)
+  if (req.ok) {
+    showModalMessage('Éxito', res.mensaje || 'Personalización guardada correctamente', 'success');
+  } else {
+    showModalMessage('Error', res.mensaje || res.message || 'Error guardando personalización', 'danger');
+  }
+});
+
+// Vista previa en tiempo real (mapear cada input de color a la badge correspondiente)
+const colorInputs = Array.from(document.querySelectorAll("input[type=color]"));
+const previewBadges = Array.from(document.querySelectorAll('.preview-badge'));
+colorInputs.forEach((input, idx) => {
+  input.addEventListener('input', () => {
+    const badge = previewBadges[idx];
+    if (badge) badge.style.backgroundColor = input.value;
+  });
+});
+
+// Sincronizar nombre de la institución en la vista previa en tiempo real
+const nombreInstitucionInput = document.getElementById('nombreInstitucion');
+const previewNombreInstitucionEl = document.getElementById('previewNombreInstitucion');
+if (nombreInstitucionInput && previewNombreInstitucionEl) {
+  nombreInstitucionInput.addEventListener('input', () => {
+    previewNombreInstitucionEl.textContent = nombreInstitucionInput.value || 'Universidad Nacional de Educación';
+  });
+}
+
+// Sincronizar nombre de la plataforma y eslogan en la vista previa en tiempo real
+const nombrePlataformaInput = document.getElementById('nombrePlataforma');
+const previewNombrePlataformaEl = document.getElementById('previewNombrePlataforma');
+const esloganInput = document.getElementById('eslogan');
+const previewEsloganEl = document.getElementById('previewEslogan');
+if (nombrePlataformaInput && previewNombrePlataformaEl) {
+  nombrePlataformaInput.addEventListener('input', () => {
+    previewNombrePlataformaEl.textContent = nombrePlataformaInput.value || 'Sistema de Gestión Bibliotecaria';
+  });
+}
+if (esloganInput && previewEsloganEl) {
+  esloganInput.addEventListener('input', () => {
+    previewEsloganEl.textContent = esloganInput.value || 'Fomentando el amor por la lectura';
+  });
+}
+
+// Actualizar el campo de texto al lado del input[type=color] para mostrar el hex seleccionado
+document.querySelectorAll('.input-group').forEach(group => {
+  const colorInput = group.querySelector('input[type=color]');
+  const textInput = group.querySelector('input[type=text]');
+  if (colorInput && textInput) {
+    // establecer inicial
+    textInput.value = colorInput.value;
+    colorInput.addEventListener('input', () => {
+      textInput.value = colorInput.value;
+    });
   }
 });

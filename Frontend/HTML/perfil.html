@@ -17,6 +17,7 @@
 
   <!-- Estilos personalizados -->
   <link rel="stylesheet" href="CSS/perfil.css">
+  <link rel="stylesheet" href="CSS/variables.css">
 </head>
 
 <body class="d-flex">
@@ -180,6 +181,88 @@
           </div>
         </div>
       </div>
+
+
+
+
+  <!-- Sección: Personalización de la Plataforma -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-header bg-info-gradient text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-palette me-2"></i>Personalización de la Plataforma
+              </h5>
+            </div>
+            <div class="card-body">
+              <form id="formPersonalizacion">
+                <div class="row">
+                  
+                  <div class="col-12 col-md-6 mb-3">
+                    <label for="nombrePlataforma" class="form-label fw-bold">
+                      <i class="bi bi-card-heading me-2"></i>Nombre de bienvenida de la Plataforma
+                    </label>
+                    <input type="text" class="form-control" id="nombrePlataforma" 
+                           value="Sistema de Gestión Bibliotecaria" required>
+                    <small class="text-muted">Título que aparece en la vista de inicio de sesion</small>
+                  </div>
+
+                  <div class="col-12 col-md-6 mb-3">
+                    <label for="eslogan" class="form-label fw-bold">
+                      <i class="bi bi-quote me-2"></i>Eslogan (Opcional)
+                    </label>
+                    <input type="text" class="form-control" id="eslogan" 
+                           value="Fomentando el amor por la lectura" placeholder="Ingresa un eslogan...">
+                  </div>
+
+                  <div class="col-12 col-md-4 mb-3">
+                    <label for="colorPrimario" class="form-label fw-bold">
+                      <i class="bi bi-palette-fill me-2"></i>Color Primario
+                    </label>
+                    <div class="input-group">
+                      <input type="color" class="form-control form-control-color" id="colorPrimario" value="#003049">
+                      <input type="text" class="form-control" value="#003049" readonly>
+                    </div>
+                  </div>
+
+                  <div class="col-12 col-md-4 mb-3">
+                    <label for="colorSecundario" class="form-label fw-bold">
+                      <i class="bi bi-palette-fill me-2"></i>Color Secundario
+                    </label>
+                    <div class="input-group">
+                      <input type="color" class="form-control form-control-color" id="colorSecundario" value="#023e8a">
+                      <input type="text" class="form-control" value="#023e8a" readonly>
+                    </div>
+                  </div>
+
+                  <div class="col-12 col-md-4 mb-3">
+                    <label for="colorAcento" class="form-label fw-bold">
+                      <i class="bi bi-palette-fill me-2"></i>Color de Acento
+                    </label>
+                    <div class="input-group">
+                      <input type="color" class="form-control form-control-color" id="colorAcento" value="#669bbc">
+                      <input type="text" class="form-control" value="#669bbc" readonly>
+                    </div>
+                  </div>
+
+                  <div class="col-12">
+                    <button type="submit" class="btn btn-info text-white">
+                      <i class="bi bi-brush me-2"></i>Guardar Personalización
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary ms-2" onclick="resetearColores()">
+                      <i class="bi bi-arrow-clockwise me-2"></i>Restablecer Colores
+                    </button>
+                  </div>
+
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+
 
       <!-- Sección: Configuración de Cuenta -->
       <div class="row mb-4">
@@ -350,6 +433,7 @@
 
 
 
+
 <!-- FORMULARIO MULTA -->
   <div class="col-12 col-lg-6 mb-4">
     <div class="card shadow-sm h-100">
@@ -388,82 +472,29 @@
 
 </div>
 
-      <!-- Sección: Personalización de la Plataforma -->
-      <div class="row mb-4">
-        <div class="col-12">
-          <div class="card shadow-sm">
-            <div class="card-header bg-info-gradient text-white">
-              <h5 class="mb-0">
-                <i class="bi bi-palette me-2"></i>Personalización de la Plataforma
-              </h5>
-            </div>
-            <div class="card-body">
-              <form id="formPersonalizacion">
-                <div class="row">
-                  
-                  <div class="col-12 col-md-6 mb-3">
-                    <label for="nombrePlataforma" class="form-label fw-bold">
-                      <i class="bi bi-card-heading me-2"></i>Nombre de la Plataforma
-                    </label>
-                    <input type="text" class="form-control" id="nombrePlataforma" 
-                           value="Sistema de Gestión Bibliotecaria" required>
-                    <small class="text-muted">Título que aparece en el navegador y encabezados</small>
-                  </div>
 
-                  <div class="col-12 col-md-6 mb-3">
-                    <label for="eslogan" class="form-label fw-bold">
-                      <i class="bi bi-quote me-2"></i>Eslogan (Opcional)
-                    </label>
-                    <input type="text" class="form-control" id="eslogan" 
-                           value="Fomentando el amor por la lectura" placeholder="Ingresa un eslogan...">
-                  </div>
 
-                  <div class="col-12 col-md-4 mb-3">
-                    <label for="colorPrimario" class="form-label fw-bold">
-                      <i class="bi bi-palette-fill me-2"></i>Color Primario
-                    </label>
-                    <div class="input-group">
-                      <input type="color" class="form-control form-control-color" id="colorPrimario" value="#003049">
-                      <input type="text" class="form-control" value="#003049" readonly>
-                    </div>
-                  </div>
+<!-- FORMULARIO DE WHATSAPP -->
+<div class="card shadow-sm mt-3">
+  <div class="card-header bg-success text-white">
+    <b><i class="bi bi-whatsapp"></i> Conectar WhatsApp</b>
+  </div>
 
-                  <div class="col-12 col-md-4 mb-3">
-                    <label for="colorSecundario" class="form-label fw-bold">
-                      <i class="bi bi-palette-fill me-2"></i>Color Secundario
-                    </label>
-                    <div class="input-group">
-                      <input type="color" class="form-control form-control-color" id="colorSecundario" value="#023e8a">
-                      <input type="text" class="form-control" value="#023e8a" readonly>
-                    </div>
-                  </div>
+  <div class="card-body text-center">
+    <button class="btn btn-success mb-3" onclick="mostrarQR()">
+      Generar QR
+    </button>
 
-                  <div class="col-12 col-md-4 mb-3">
-                    <label for="colorAcento" class="form-label fw-bold">
-                      <i class="bi bi-palette-fill me-2"></i>Color de Acento
-                    </label>
-                    <div class="input-group">
-                      <input type="color" class="form-control form-control-color" id="colorAcento" value="#669bbc">
-                      <input type="text" class="form-control" value="#669bbc" readonly>
-                    </div>
-                  </div>
+    <div id="qrContainer" style="display:none;">
+      <h6>Escanea el QR desde tu WhatsApp</h6>
+      <img id="qrImage" src="" style="width: 250px; height: 250px;" />
+    </div>
+  </div>
+</div>
 
-                  <div class="col-12">
-                    <button type="submit" class="btn btn-info text-white">
-                      <i class="bi bi-brush me-2"></i>Guardar Personalización
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary ms-2" onclick="resetearColores()">
-                      <i class="bi bi-arrow-clockwise me-2"></i>Restablecer Colores
-                    </button>
-                  </div>
 
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
 
+    
       <!-- Sección: Vista Previa -->
       <div class="row">
         <div class="col-12">

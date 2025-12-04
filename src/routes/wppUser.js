@@ -1,14 +1,21 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { enviarRecordatorio } = require('../controllers/notificaciones');
-const checkAuth = require('../middlewares/checkAuth');
+const { iniciarWhatsApp, obtenerQR } = require("../services/whatsapp");
 
-router.use(checkAuth);
+// Iniciar cliente si no ha iniciado
+iniciarWhatsApp();
 
-router.post('/recordatorio/:usuarioId', async (req, res) => {
-  const usuarioId = req.params.usuarioId;
-  const resultado = await enviarRecordatorio(usuarioId);
-  res.json(resultado);
+router.get("/qr", (req, res) => {
+  const qr = obtenerQR();
+  
+  if (!qr) {
+    return res.json({
+      ok: false,
+      message: "No hay QR generado (WhatsApp ya está conectado o generando QR)"
+    });
+  }
+
+  res.json({ ok: true, qr });
 });
 
 module.exports = router;

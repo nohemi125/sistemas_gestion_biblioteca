@@ -6,6 +6,7 @@ const {
   crearMiembro,
   actualizarMiembro,
   eliminarMiembro,
+  setEstadoMiembro,
   buscarMiembros,
   enviarNotificacionMiembro
 } = require('../controllers/miembros');
@@ -32,6 +33,9 @@ router.put('/:id', actualizarMiembro);
 
 //  Eliminar un miembro
 router.delete('/:id', eliminarMiembro);
+
+// Cambiar estado activo/inactivo (soft delete / restore)
+router.patch('/:id/estado', setEstadoMiembro);
 
 // Enviar notificación manual a un miembro (email + WhatsApp)
 router.post('/:id/notify', enviarNotificacionMiembro);

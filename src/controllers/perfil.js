@@ -110,6 +110,47 @@ const guardarMulta = async (req, res) => {
   }
 };
 
+
+// -------------------- PERSONALIZACIÓN --------------------
+const guardarPersonalizacion = async (req, res) => {
+  try {
+    const {
+      nombrePlataforma,
+      eslogan,
+      colorPrimario,
+      colorSecundario,
+      colorAcento
+    } = req.body;
+
+    const payload = {
+      nombrePlataforma,
+      eslogan,
+      colorPrimario,
+      colorSecundario,
+      colorAcento
+    };
+
+    const saved = await modelos.guardarPersonalizacion(payload);
+
+    res.json({ ok: true, mensaje: 'Personalización guardada', data: saved });
+  } catch (err) {
+    console.error('Error en guardarPersonalizacion:', err);
+    res.status(500).json({ ok: false, mensaje: 'Error al guardar personalización', error: err.message });
+  }
+};
+
+const obtenerPersonalizacion = async (req, res) => {
+  try {
+    const data = await modelos.obtenerPersonalizacion();
+    res.json({ ok: true, data });
+  } catch (err) {
+    console.error('Error obtenerPersonalizacion:', err);
+    res.status(500).json({ ok: false, mensaje: 'Error al cargar personalización', error: err.message });
+  }
+};
+
+
+
 module.exports = {
   obtenerInstitucion,
   guardarInstitucion,
@@ -117,5 +158,8 @@ module.exports = {
   cambiarContrasena,
   obtenerUsuario,
   obtenerMulta,
-  guardarMulta
+  guardarMulta,
+  guardarPersonalizacion,
+ obtenerPersonalizacion,
+
 };

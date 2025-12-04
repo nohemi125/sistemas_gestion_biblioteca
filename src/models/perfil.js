@@ -104,6 +104,49 @@ const Multa = {
 
 
 
+
+
+// PERSONALIZACION 
+const obtenerPersonalizacion = async () => {
+  const [rows] = await db.query(`SELECT nombrePlataforma, eslogan, colorPrimario, colorSecundario, colorAcento, logo FROM institucion LIMIT 1`);
+  return rows[0];
+};
+
+const guardarPersonalizacion = async (data) => {
+  // Verificar si ya existe una fila en la tabla 'institucion'
+  const [rows] = await db.query('SELECT id_institucion FROM institucion LIMIT 1');
+  const params = [
+    data.nombrePlataforma || null,
+    data.eslogan || null,
+    data.colorPrimario || null,
+    data.colorSecundario || null,
+    data.colorAcento || null
+  ];
+
+  if (rows && rows.length > 0) {
+    // Actualizar la fila existente usando la clave real id_institucion
+    const id = rows[0].id_institucion || rows[0].id;
+    const sql = `
+      UPDATE institucion
+      SET nombrePlataforma = ?, eslogan = ?, colorPrimario = ?, colorSecundario = ?, colorAcento = ?
+      WHERE id_institucion = ?
+    `;
+    await db.query(sql, params.concat([id]));
+    return { id_institucion: id, ...data };
+  } else {
+    // Insertar una nueva fila si no existe
+    const insertSql = `
+      INSERT INTO institucion (nombrePlataforma, eslogan, colorPrimario, colorSecundario, colorAcento)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+    const [result] = await db.query(insertSql, params);
+    return { id_institucion: result.insertId, ...data };
+  }
+};
+
+
+
+
 // Exportar funciones individuales para compatibilidad con controllers
 module.exports = {
   obtenerInstitucion: Institucion.obtenerInstitucion,
@@ -115,5 +158,8 @@ module.exports = {
   actualizarContrasena: Usuario.actualizarContrasena ,
   actualizarNombre: Usuario.actualizarNombre,
   obtenerMulta: Multa.obtenerMulta,
-  guardarMulta: Multa.guardarMulta
+  guardarMulta: Multa.guardarMulta,
+  obtenerPersonalizacion,
+guardarPersonalizacion,
+
 };

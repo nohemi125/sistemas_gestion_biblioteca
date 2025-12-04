@@ -12,10 +12,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const listaLibros = document.getElementById("listaLibros")
   
   let miembroSeleccionado = null
+  let correoSeleccionado = null
   let libroSeleccionado = null
+  let libroCantidadDisponible = null
   let prestamoEditandoId = null
   const bootstrap = window.bootstrap // Declare the bootstrap variable
   let todosLosPrestamos = [] // Variable para guardar todos los préstamos sin filtrar
+  const libroCantidadEl = document.getElementById('libroCantidadDisponible')
 
   // Cargar préstamos desde la BD
   async function cargarPrestamos(filtro = "") {
@@ -273,16 +276,34 @@ document.addEventListener("DOMContentLoaded", () => {
           const li = document.createElement("li")
           li.className = "list-group-item list-group-item-action"
           li.style.cursor = "pointer"
-          li.innerHTML = `
-            <strong>${m.nombres} ${m.apellidos}</strong><br>
-            <small class="text-muted">${m.correo || 'Sin correo'}</small>
-          `
-          li.addEventListener("click", () => {
-            inputMiembro.value = `${m.nombres} ${m.apellidos}`
-            miembroSeleccionado = m.id_miembro
-            listaMiembros.innerHTML = ""
-            listaMiembros.style.display = "none"
-          })
+          // Mostrar etiqueta si el miembro está inactivo
+          const isActivo = (m.activo === undefined || m.activo === null) ? 1 : Number(m.activo)
+          const idDisplay = m.id_miembro || m.id || 'N/A'
+          const correoDisplay = m.correo || m.email || 'Sin correo'
+          if (isActivo === 0) {
+            li.classList.add('text-muted')
+            li.style.cursor = 'not-allowed'
+            li.innerHTML = `
+              <strong>${m.nombres} ${m.apellidos} <span class="badge bg-secondary ms-2">Inactivo</span> <small class="text-muted">#${idDisplay}</small></strong><br>
+              <small class="text-muted">${correoDisplay}</small>
+            `
+            li.addEventListener('click', () => {
+              mostrarToast('Miembro inactivo. No se puede crear préstamo.', 'warning')
+            })
+          } else {
+            li.innerHTML = `
+              <strong>${m.nombres} ${m.apellidos} <small class="text-muted"></small></strong><br>
+              <small class="text-muted">${correoDisplay}</small>
+            `
+            li.addEventListener("click", () => {
+              // Mostrar solo el nombre en el input; mantener el id en la variable interna
+              inputMiembro.value = `${m.nombres} ${m.apellidos}`
+              miembroSeleccionado = m.id_miembro || m.id
+              correoSeleccionado = m.correo || m.email || null
+              listaMiembros.innerHTML = ""
+              listaMiembros.style.display = "none"
+            })
+          }
           listaMiembros.appendChild(li)
         })
         
@@ -320,6 +341,8 @@ document.addEventListener("DOMContentLoaded", () => {
           listaLibros.appendChild(li)
           listaLibros.style.display = "block"
           libroSeleccionado = null
+          libroCantidadDisponible = null
+          if (libroCantidadEl) libroCantidadEl.style.display = 'none'
           return
         }
 
@@ -327,15 +350,22 @@ document.addEventListener("DOMContentLoaded", () => {
           const li = document.createElement("li")
           li.className = "list-group-item list-group-item-action"
           li.style.cursor = "pointer"
-          li.innerHTML = `
-            <strong>${l.titulo}</strong><br>
-            <small class="text-muted">${l.autor || 'Sin autor'} - ${l.disponibles || 0} disponibles</small>
-          `
+            li.innerHTML = `
+              <strong>${l.titulo}</strong><br>
+              <small class="text-muted">${l.cantidad || 0} disponibles</small>
+            `
+            li.dataset.cantidad = l.cantidad || 0
           li.addEventListener("click", () => {
             inputLibro.value = l.titulo
             libroSeleccionado = l.id_libro || l.id
             listaLibros.innerHTML = ""
             listaLibros.style.display = "none"
+              // Mostrar cantidad disponible en el modal
+              libroCantidadDisponible = Number(li.dataset.cantidad) || 0
+              if (libroCantidadEl) {
+                libroCantidadEl.style.display = 'block'
+                libroCantidadEl.textContent = `Disponibles: ${libroCantidadDisponible}`
+              }
           })
           listaLibros.appendChild(li)
         })
@@ -435,65 +465,203 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target.closest(".btn-recordatorio")) {
       const btn = e.target.closest(".btn-recordatorio")
       const id = btn.dataset.id
-      const miembro = btn.dataset.miembro
-      const libro = btn.dataset.libro
 
-      document.querySelector("#modalRecordatorio .alert-secondary").innerHTML = `
-        <strong>Para:</strong> ${miembro}<br>
-        <strong>Préstamo:</strong> #P${String(id).padStart(3, "0")} - ${libro}<br>
-        <strong>Fecha del préstamo:</strong> ${btn.dataset.fecha ? new Date(btn.dataset.fecha).toLocaleDateString('es-CO') : '-'}
-      `
-
-      // Guardar ID del préstamo en el formulario
-      document.getElementById("formRecordatorio").dataset.prestamoId = id
-
-      // Prefill mensaje con datos del miembro, libro y fecha de préstamo
+      // Cargar detalles del préstamo para obtener celular del miembro
       try {
-        const fechaRaw = btn.dataset.fecha
-        const fechaFormateada = fechaRaw ? new Date(fechaRaw).toLocaleDateString('es-CO') : '-'
-        const mensajeDefault = `Estimado/a ${miembro},\n\nLe recordamos que el libro "${libro}" prestado el ${fechaFormateada} debe ser devuelto a la brevedad.\n\nGracias por su colaboración.`
+        const resp = await fetch(`/api/prestamos/${id}`, { credentials: 'include' })
+        if (!resp.ok) throw new Error('No se pudo obtener detalles del préstamo')
+        const prestamo = await resp.json()
+
+        const miembro = prestamo.nombre_miembro
+        const libro = prestamo.titulo_libro || btn.dataset.libro
+        const fechaFormateada = prestamo.fecha_prestamo ? new Date(prestamo.fecha_prestamo).toLocaleDateString('es-CO') : (btn.dataset.fecha ? new Date(btn.dataset.fecha).toLocaleDateString('es-CO') : '-')
+        const telefonoMiembro = prestamo.celular_miembro || prestamo.celular || ''
+
+        // Obtener datos de la institución para mostrar contacto en el modal
+        let nombreInst = 'Biblioteca Municipal', telefonoInst = '310 123 4567', correoInst = 'biblioteca@ejemplo.com', direccionInst = '';
+        try {
+          const instResp = await fetch('/api/perfil/institucion', { credentials: 'include' })
+          if (instResp.ok) {
+            const instJson = await instResp.json()
+            if (instJson && instJson.data) {
+              const d = instJson.data
+              nombreInst = d.nombrePlataforma || d.nombre || nombreInst
+              telefonoInst = d.telefono || telefonoInst
+              correoInst = d.correo || d.email || correoInst
+            }
+          }
+        } catch (e) {
+          console.warn('No se pudo cargar datos de la institución para el modal:', e)
+        }
+
+        document.querySelector("#modalRecordatorio .alert-secondary").innerHTML = `
+          <strong>Para:</strong> ${miembro} ${telefonoMiembro ? ' - ' + telefonoMiembro : ''}<br>
+          <strong>Préstamo:</strong> #P${String(id).padStart(3, "0")} - ${libro}<br>
+          <strong>Fecha del préstamo:</strong> ${fechaFormateada}<br>
+        `
+
+        // Guardar ID del préstamo en el formulario
+        document.getElementById("formRecordatorio").dataset.prestamoId = id
+
+        // Prefill mensaje con datos del miembro, libro, fecha y teléfono
+        const mensajeDefault = [
+          `*📚 Recordatorio de Devolución — ${nombreInst}*`,
+          ``,
+          `Hola *${miembro}* 👋,`,
+          ``,
+          `Te recordamos que tienes un libro pendiente de devolución:`,
+          `📖 ${libro}`,
+          `📅 Fecha de devolución: ${fechaFormateada}`,
+          `*🔖 Préstamo:* P${String(id).padStart(3, '0')}`,
+          ``,
+          `Por favor entrega el libro en la fecha indicada para evitar recargos. Si necesitas una prórroga, responde a este mensaje indicando cuántos días necesitas.`,
+          ``,
+          `*¿Necesitas ayuda?*`,
+          // Mostrar teléfono del miembro (si aplica) y siempre mostrar teléfono/correo de la institución
+          telefonoMiembro ? `📞 Tel miembro: ${telefonoMiembro}` : '',
+          `📞 Tel institución: ${telefonoInst} (Lun-Vie 9:00-17:00)`,
+          correoInst ? `✉️ Correo institución: ${correoInst}` : '',
+          ``,
+          `Gracias por usar nuestros servicios.`,
+          `${nombreInst} – Gestión de Préstamos${direccionInst ? ' — ' + direccionInst : ''}`
+        ].join('\n')
+
         const textarea = document.getElementById('mensajeRecordatorio')
         if (textarea) textarea.value = mensajeDefault
-      } catch (err) {
-        console.warn('No se pudo prefijar el mensaje del recordatorio:', err)
-      }
 
-      const modal = new bootstrap.Modal(document.getElementById("modalRecordatorio"))
-      modal.show()
+        const modal = new bootstrap.Modal(document.getElementById("modalRecordatorio"))
+        modal.show()
+      } catch (err) {
+        console.error('Error al cargar detalles del préstamo para recordatorio:', err)
+        // Fallback: mostrar modal con los datos disponibles en el botón
+        const miembro = btn.dataset.miembro
+        const libro = btn.dataset.libro
+        document.querySelector("#modalRecordatorio .alert-secondary").innerHTML = `
+          <strong>Para:</strong> ${miembro}<br>
+          <strong>Préstamo:</strong> #P${String(id).padStart(3, "0")} - ${libro}<br>
+          <strong>Fecha del préstamo:</strong> ${btn.dataset.fecha ? new Date(btn.dataset.fecha).toLocaleDateString('es-CO') : '-'}
+        `
+        document.getElementById("formRecordatorio").dataset.prestamoId = id
+        const textarea = document.getElementById('mensajeRecordatorio')
+        if (textarea) textarea.value = `Estimado/a ${btn.dataset.miembro},\n\nLe recordamos que el libro "${btn.dataset.libro}" prestado debe ser devuelto a la brevedad.\n\nGracias por su colaboración.`
+        const modal = new bootstrap.Modal(document.getElementById("modalRecordatorio"))
+        modal.show()
+      }
     }
 
     // Enviar multa
     if (e.target.closest(".btn-multa")) {
       const btn = e.target.closest(".btn-multa")
       const id = btn.dataset.id
-      const miembro = btn.dataset.miembro
-      const libro = btn.dataset.libro
       const dias = btn.dataset.dias
 
-      document.querySelector("#modalMulta .alert-danger").innerHTML = `
-        <strong>Para:</strong> ${miembro}<br>
-        <strong>Préstamo:</strong> #P${String(id).padStart(3, "0")} - ${libro}<br>
-        <strong>Días de retraso:</strong> ${dias} días
-      `
-
-      document.getElementById("montoMulta").value = (Number.parseFloat(dias) * 1.0).toFixed(2)
-
-      // Guardar ID del préstamo en el formulario
-      document.getElementById("formMulta").dataset.prestamoId = id
-
-      // Prefill mensaje de multa con datos del miembro, libro y fecha de préstamo
       try {
-        const fechaRaw = btn.dataset.fecha
-        const fechaFormateada = fechaRaw ? new Date(fechaRaw).toLocaleDateString('es-CO') : '-'
-        const mensajeDefault = `Estimado/a ${miembro},\n\nSe ha registrado una multa por retraso en el préstamo del libro "${libro}", prestado el ${fechaFormateada}.\n\nMonto: $${(Number.parseFloat(dias) * 1.0).toFixed(2)}.\n\nPor favor acérquese a la biblioteca para regularizar su situación.`
+        const resp = await fetch(`/api/prestamos/${id}`, { credentials: 'include' })
+        if (!resp.ok) throw new Error('No se pudo obtener detalles del préstamo')
+        const prestamo = await resp.json()
+
+        const miembro = prestamo.nombre_miembro || btn.dataset.miembro
+        const libro = prestamo.titulo_libro || btn.dataset.libro
+        const telefonoMiembro = prestamo.celular_miembro || prestamo.celular || ''
+
+        // Obtener configuración de multa (valor por día y días de tolerancia)
+        let valorPorDia = 1.0
+        let diasTolerancia = 0
+        try {
+          const cfgResp = await fetch('/api/perfil/multa', { credentials: 'include' })
+          if (cfgResp.ok) {
+            const cfgJson = await cfgResp.json()
+            if (cfgJson && cfgJson.ok && cfgJson.data) {
+              valorPorDia = parseFloat(cfgJson.data.valor_multa) || valorPorDia
+              diasTolerancia = parseInt(cfgJson.data.dias_tolerancia) || diasTolerancia
+            }
+          }
+        } catch (cfgErr) {
+          console.warn('No se pudo cargar configuración de multa, usando valores por defecto', cfgErr)
+        }
+
+        // Calcular días a cobrar y monto final respetando la tolerancia
+        const diasRetrasoTotal = Number.parseInt(dias) || 0
+        const diasACobrar = Math.max(0, diasRetrasoTotal - (Number.isFinite(diasTolerancia) ? diasTolerancia : 0))
+        const montoCalculado = (diasACobrar * (Number.isFinite(valorPorDia) ? valorPorDia : 1.0))
+
+        // Obtener datos de la institución para mostrar contacto en el modal
+        let nombreInst = 'Biblioteca Municipal', telefonoInst = '310 123 4567', correoInst = 'biblioteca@ejemplo.com', direccionInst = '';
+        try {
+          const instResp = await fetch('/api/perfil/institucion', { credentials: 'include' })
+          if (instResp.ok) {
+            const instJson = await instResp.json()
+            if (instJson && instJson.data) {
+              const d = instJson.data
+              nombreInst = d.nombrePlataforma || d.nombre || nombreInst
+              telefonoInst = d.telefono || telefonoInst
+              correoInst = d.correo || d.email || correoInst
+              direccionInst = d.direccion || ''
+            }
+          }
+        } catch (e) {
+          console.warn('No se pudo cargar datos de la institución para el modal:', e)
+        }
+
+        document.querySelector("#modalMulta .alert-danger").innerHTML = `
+          <strong>Para:</strong> ${miembro} ${telefonoMiembro ? ' - ' + telefonoMiembro : ''}<br>
+          <strong>Préstamo:</strong> #P${String(id).padStart(3, "0")} - ${libro}<br>
+          <strong>Días de retraso:</strong> ${diasRetrasoTotal} días<br>
+          <strong>Días a cobrar (tolerancia ${diasTolerancia}):</strong> ${diasACobrar} días<br>
+        `
+
+        document.getElementById("montoMulta").value = montoCalculado.toFixed(2)
+
+        // Guardar ID del préstamo en el formulario
+        document.getElementById("formMulta").dataset.prestamoId = id
+
+        const mensajeDefault = [
+          `*⚠️ Aviso de Multa por Retraso — ${nombreInst}*`,
+          ``,
+          `Estimado/a *${miembro}*,`,
+          ``,
+          `Hemos registrado un retraso en la devolución de:`,
+          `📖 ${libro}`,
+          `*🔖 Préstamo:* P${String(id).padStart(3, '0')}`,
+          `*⏳ Días de retraso:* ${diasRetrasoTotal} (se cobran ${diasACobrar} día(s) al valor de $${valorPorDia.toFixed(2)})`,
+          `*💰 Monto de la multa:* $${montoCalculado.toFixed(2)}`,
+          ``,
+          `Para regularizar tu situación puedes:`,
+          `• Responder a este mensaje si necesitas información sobre el pago.`,
+          ``,
+          // Mostrar teléfono del miembro (si aplica) y siempre mostrar teléfono/correo de la institución
+          `📞 Atención (institución): ${telefonoInst}`,
+          correoInst ? `✉️ ${correoInst}` : '',
+          ``,
+          `Si ya realizaste el pago, por favor indícanos el comprobante respondiendo con el número de préstamo.`,
+          ``,
+          `Gracias por tu atención.`,
+          `${nombreInst} – Gestión de Préstamos${direccionInst ? ' — ' + direccionInst : ''}`
+        ].join('\n')
+
         const textarea = document.getElementById('mensajeMulta')
         if (textarea) textarea.value = mensajeDefault
-      } catch (err) {
-        console.warn('No se pudo prefijar el mensaje de la multa:', err)
-      }
 
-      const modal = new bootstrap.Modal(document.getElementById("modalMulta"))
-      modal.show()
+        const modal = new bootstrap.Modal(document.getElementById("modalMulta"))
+        modal.show()
+      } catch (err) {
+        console.error('Error al cargar detalles del préstamo para multa:', err)
+        // Fallback
+        const miembro = btn.dataset.miembro
+        const libro = btn.dataset.libro
+        const dias = btn.dataset.dias
+        document.querySelector("#modalMulta .alert-danger").innerHTML = `
+          <strong>Para:</strong> ${miembro}<br>
+          <strong>Préstamo:</strong> #P${String(id).padStart(3, "0")} - ${libro}<br>
+          <strong>Días de retraso:</strong> ${dias} días
+        `
+        document.getElementById("montoMulta").value = (Number.parseFloat(dias) * 1.0).toFixed(2)
+        document.getElementById("formMulta").dataset.prestamoId = id
+        const textarea = document.getElementById('mensajeMulta')
+        if (textarea) textarea.value = `Estimado/a ${miembro},\n\nSe ha registrado una multa por retraso en el préstamo del libro "${libro}".\n\nMonto: $${(Number.parseFloat(dias) * 1.0).toFixed(2)}.\n\nPor favor acérquese a la biblioteca para regularizar su situación.`
+        const modal = new bootstrap.Modal(document.getElementById("modalMulta"))
+        modal.show()
+      }
     }
   })
 
@@ -514,9 +682,16 @@ document.addEventListener("DOMContentLoaded", () => {
         return
       }
 
+      // Validar stock local antes de enviar (mejor UX). El backend también valida transaccionalmente.
+      if (libroCantidadDisponible !== null && Number(libroCantidadDisponible) <= 0) {
+        mostrarToast('No hay copias disponibles para este libro', 'warning')
+        return
+      }
+
       const nuevoPrestamo = {
         id_miembro: miembroSeleccionado,
         id_libro: libroSeleccionado,
+        id_correo: correoSeleccionado,
         fecha_prestamo: document.getElementById("fechaPrestamo").value,
         fecha_devolucion: document.getElementById("fechaDevolucion").value,
       }
@@ -538,6 +713,8 @@ document.addEventListener("DOMContentLoaded", () => {
           formNuevoPrestamo.reset()
           miembroSeleccionado = null
           libroSeleccionado = null
+          libroCantidadDisponible = null
+          if (libroCantidadEl) libroCantidadEl.style.display = 'none'
           listaMiembros.innerHTML = ""
           listaLibros.innerHTML = ""
           
@@ -622,9 +799,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return
       }
 
-      // Determinar canales seleccionados
-      const enviarEmail = document.getElementById('checkEmail') ? document.getElementById('checkEmail').checked : true
-      const enviarWhatsapp = document.getElementById('checkWhatsapp') ? document.getElementById('checkWhatsapp').checked : false
+      // Determinar canales seleccionados (buscar las casillas DENTRO del formulario para evitar IDs duplicados)
+      const enviarEmail = formRecordatorio.querySelector('#checkEmail') ? formRecordatorio.querySelector('#checkEmail').checked : true
+      const enviarWhatsapp = formRecordatorio.querySelector('#checkWhatsapp') ? formRecordatorio.querySelector('#checkWhatsapp').checked : false
 
       if (!enviarEmail && !enviarWhatsapp) {
         mostrarToast('Seleccione al menos un canal (Email o WhatsApp)', 'warning')
@@ -682,9 +859,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return
       }
 
-      // Determinar canales seleccionados para multa
-      const enviarEmailM = document.getElementById('checkEmail') ? document.getElementById('checkEmail').checked : true
-      const enviarWhatsappM = document.getElementById('checkWhatsapp') ? document.getElementById('checkWhatsapp').checked : false
+      // Determinar canales seleccionados para multa (leer casillas DENTRO del formulario para evitar IDs duplicados en la página)
+      const enviarEmailM = formMulta.querySelector('#checkEmail') ? formMulta.querySelector('#checkEmail').checked : true
+      const enviarWhatsappM = formMulta.querySelector('#checkWhatsapp') ? formMulta.querySelector('#checkWhatsapp').checked : false
 
       if (!enviarEmailM && !enviarWhatsappM) {
         mostrarToast('Seleccione al menos un canal (Email o WhatsApp)', 'warning')

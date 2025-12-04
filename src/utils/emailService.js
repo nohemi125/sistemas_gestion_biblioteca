@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const perfilModel = require('../models/perfil');
 
 // Configuración del transportador de correo (Gmail)
 const transporter = nodemailer.createTransport({
@@ -44,8 +45,20 @@ const enviarCorreo = async ({ destinatario, asunto, mensaje, html }) => {
 /**
  * Plantilla HTML para recordatorio de devolución
  */
-const plantillaRecordatorio = ({ nombreMiembro, tituloLibro, fechaDevolucion, idPrestamo }) => {
-	return `
+const plantillaRecordatorio = async ({ nombreMiembro, tituloLibro, fechaDevolucion, idPrestamo }) => {
+  // intentar obtener datos de la institución para incluirlos en el pie del email
+  let institucion = null;
+  try {
+    institucion = await perfilModel.obtenerInstitucion();
+  } catch (e) {
+    institucion = null;
+  }
+  const nombreInst = (institucion && (institucion.nombrePlataforma || institucion.nombre)) || 'Biblioteca Municipal';
+  const telefonoInst = (institucion && institucion.telefono) || '';
+  const correoInst = (institucion && (institucion.correo || institucion.email)) || '';
+  const direccionInst = (institucion && institucion.direccion) || '';
+
+  return `
     <!DOCTYPE html>
     <html>
     <head>
@@ -85,6 +98,7 @@ const plantillaRecordatorio = ({ nombreMiembro, tituloLibro, fechaDevolucion, id
         </div>
         <div class="footer">
           <p>Este es un mensaje automático, por favor no respondas a este correo.</p>
+          <p style="margin-top:10px;font-size:12px;color:#666">${nombreInst}${direccionInst ? ' — ' + direccionInst : ''}${telefonoInst ? ' — Tel: ' + telefonoInst : ''}${correoInst ? ' — ' + correoInst : ''}</p>
         </div>
       </div>
     </body>
@@ -95,8 +109,20 @@ const plantillaRecordatorio = ({ nombreMiembro, tituloLibro, fechaDevolucion, id
 /**
  * Plantilla HTML para multa por retraso
  */
-const plantillaMulta = ({ nombreMiembro, tituloLibro, diasRetraso, montoMulta, idPrestamo }) => {
-	return `
+const plantillaMulta = async ({ nombreMiembro, tituloLibro, diasRetraso, montoMulta, idPrestamo }) => {
+  // intentar obtener datos de la institución
+  let institucion = null;
+  try {
+    institucion = await perfilModel.obtenerInstitucion();
+  } catch (e) {
+    institucion = null;
+  }
+  const nombreInst = (institucion && (institucion.nombrePlataforma || institucion.nombre)) || 'Biblioteca Municipal';
+  const telefonoInst = (institucion && institucion.telefono) || '';
+  const correoInst = (institucion && (institucion.correo || institucion.email)) || '';
+  const direccionInst = (institucion && institucion.direccion) || '';
+
+  return `
     <!DOCTYPE html>
     <html>
     <head>
@@ -144,6 +170,7 @@ const plantillaMulta = ({ nombreMiembro, tituloLibro, diasRetraso, montoMulta, i
         </div>
         <div class="footer">
           <p>Este es un mensaje automático, por favor no respondas a este correo.</p>
+          <p style="margin-top:10px;font-size:12px;color:#666">${nombreInst}${direccionInst ? ' — ' + direccionInst : ''}${telefonoInst ? ' — Tel: ' + telefonoInst : ''}${correoInst ? ' — ' + correoInst : ''}</p>
         </div>
       </div>
     </body>

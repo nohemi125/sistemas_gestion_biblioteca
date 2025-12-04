@@ -10,6 +10,7 @@ const session = require('express-session');
 
 // Importar conexión a la base de datos
 const db = require("./src/config/db"); 
+// Inicializar/asegurar columnas necesarias en la BD (agregar columna 'activo' si falta)
 
 // Inicializar la app
 const app = express();
@@ -64,6 +65,11 @@ app.use("/api/prestamos", prestamosRoutes);
 app.use("/api/emails", emailsRoutes);
 app.use("/api/beneficios", beneficiosRoutes);
 app.use('/api/perfil', perfilRoutes);
+
+// RUTA PARA WPP
+const wppRoutes = require('./src/routes/wppUser');
+app.use("/api/wpp", wppRoutes);
+
 
 
 

@@ -11,6 +11,7 @@
 
   <!-- Estilos personalizados -->
   <link rel="stylesheet" href="../CSS/prestamos.css">
+  <link rel="stylesheet" href="../CSS/variables.css">
 </head>
 
 <body class="d-flex">
@@ -214,7 +215,8 @@
                 autocomplete="off"
                 required>
               <ul id="listaLibros" class="list-group position-absolute w-100 mt-1" style="z-index:1050; display:none; max-height: 200px; overflow-y: auto;"></ul>
-              <small class="text-muted">Selecciona un libro de la lista de sugerencias</small>
+              <small class="text-muted d-block">Selecciona un libro de la lista de sugerencias</small>
+              <div id="libroCantidadDisponible" class="small text-muted mt-1" style="display:none;">Disponibles: -</div>
             </div>
             <div class="mb-3">
               <label class="form-label">Fecha de Préstamo</label>

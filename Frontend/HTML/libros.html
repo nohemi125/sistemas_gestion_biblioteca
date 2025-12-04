@@ -8,6 +8,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <!-- Actualizando referencia a CSS personalizado -->
   <link rel="stylesheet" href="CSS/libros.css">
+  <link rel="stylesheet" href="CSS/variables.css">
 </head>
 
 <body class="d-flex">
@@ -151,6 +152,13 @@
               <input type="text" class="form-control" id="imagen">
               <div class="text-danger small" id="errorImagen"></div>
             </div>
+            <!-- Preview opcional de la imagen (se muestra si se pega una URL válida) -->
+            <div id="imagenPreviewContainer" class="mb-3" style="display:none;">
+              <label class="form-label">Vista previa (opcional)</label>
+              <div>
+                <img id="imagenPreview" src="" alt="Preview imagen" style="max-width:100%; max-height:180px; cursor:pointer;" />
+              </div>
+            </div>
             <div class="mb-3">
               <label class="form-label">Categoría</label>
               <select class="form-select" id="categoria">
@@ -199,6 +207,21 @@
       </div>
     </div>
   </div>
+
+        <!-- Modal para ver imagen ampliada -->
+        <div class="modal fade" id="modalImagenView" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+              <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">Imagen del libro</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body text-center">
+                <img id="modalImagenImg" src="" alt="Imagen ampliada" style="max-width:100%; height:auto;" />
+              </div>
+            </div>
+          </div>
+        </div>
 
   <!-- Modal de mensaje -->
   <div class="modal fade" id="modalMensaje" tabindex="-1" aria-hidden="true">

@@ -128,3 +128,90 @@ body {
     font-size: 1.3rem;
   }
 }
+/* Contenedor que agrupa ambos paneles */
+.contenedor-principal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+}
+
+/* Panel izquierdo (nuevo) */
+.panel-izquierdo {
+  width: 380px; /* MISMO tamaño del derecho */
+  height: 440px; /* MISMA altura del derecho */
+  background: #0d6efd; /* Cambia por tu color o deja así */
+  border-radius: 12px 0 0 12px; /* Esquina izquierda redondeada */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Imagen del logo */
+.logo {
+  width: 200px;
+}
+
+/* Contenedor derecho (TU ORIGINAL) */
+.login-card {
+  background: white;
+  border-radius: 0 12px 12px 0; /* Redondeo derecho */
+  padding: 2.5rem 2rem;
+  width: 380px;
+  height: 440px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+
+/* === PANEL CON DOBLE CARD 50/50 SIN CAMBIAR TU LOGIN === */
+
+.login-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;        /* Ocupa toda la pantalla */
+  width: 100%;
+  margin: 0;            /* Quita el espacio arriba */
+  padding: 0;
+}
+
+
+/* PANEL IZQUIERDO */
+.left-panel {
+  width: 380px;       /* MISMO tamaño del login */
+  height: 440px;      /* MISMA altura del login */
+  background: #003049; /* Color original que tenías */
+  color: white;
+
+  border-radius: 12px 0 0 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  padding: 2rem;
+  text-align: center;
+}
+
+.left-panel .left-image {
+  width: 140px;
+  margin-bottom: 1rem;
+}
+
+/* PANEL DERECHO: NO TOCO TU LOGIN, SOLO EL CONTENEDOR */
+.right-panel {
+  width: 380px;     /* MISMO tamaño que el izquierdo */
+  height: 440px;
+  background: white;
+
+  border-radius: 0 12px 12px 0;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+}

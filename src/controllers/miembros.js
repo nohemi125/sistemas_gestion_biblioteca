@@ -71,6 +71,20 @@ const eliminarMiembro = async (req, res) => {
   }
 };
 
+// Cambiar estado activo/inactivo de un miembro
+const setEstadoMiembro = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { activo } = req.body; // esperar { activo: true|false }
+    const resultado = await Miembro.setActivo(id, activo ? 1 : 0);
+    if (resultado.affectedRows === 0) return res.status(404).json({ mensaje: 'Miembro no encontrado' });
+    return res.json({ mensaje: activo ? 'Miembro activado' : 'Miembro inactivado' });
+  } catch (err) {
+    console.error('Error cambiando estado de miembro:', err);
+    res.status(500).json({ error: 'Error cambiando estado de miembro' });
+  }
+};
+
 //  Buscar miembros (por nombre, email, etc.)
 const buscarMiembros = async (req, res) => {
   try {
@@ -159,6 +173,7 @@ module.exports = {
   crearMiembro,
   actualizarMiembro,
   eliminarMiembro,
+  setEstadoMiembro,
   buscarMiembros,
   enviarNotificacionMiembro
 };

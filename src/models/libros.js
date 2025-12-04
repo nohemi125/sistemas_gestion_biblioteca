@@ -42,6 +42,17 @@ async eliminar(id) {
   return result;
 },
 
+  // Incrementar cantidad de un libro (y actualizar estado a 'Disponible' si aplica)
+  async incrementarCantidad(id, incremento = 1) {
+    const [rows] = await db.query('SELECT cantidad FROM libros WHERE id_libro = ?', [id]);
+    if (!rows || rows.length === 0) return null;
+    const cantidadActual = Number(rows[0].cantidad) || 0;
+    const nuevaCantidad = cantidadActual + Number(incremento);
+    const nuevoEstado = nuevaCantidad <= 0 ? 'Agotado' : 'Disponible';
+    await db.query('UPDATE libros SET cantidad = ?, estado = ? WHERE id_libro = ?', [nuevaCantidad, nuevoEstado, id]);
+    return { nuevaCantidad };
+  },
+
 
 // Buscar libros por texto y/o categoría
 async buscar(filtro, categoria) {

@@ -3,8 +3,14 @@
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("formLibro");
   const tablaLibros = document.getElementById("tablaLibros");
+  const imagenInput = document.getElementById('imagen');
+  const imagenPreviewContainer = document.getElementById('imagenPreviewContainer');
+  const imagenPreview = document.getElementById('imagenPreview');
+  const modalImagenImg = document.getElementById('modalImagenImg');
   let libroEditandoId = null;
   let idAEliminar = null;
+
+  const bs = window.bootstrap;
 
   // Envío del formulario (Agregar o Editar)
   form.addEventListener("submit", async (e) => {
@@ -117,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
   <td>${libro.isbn || ""}</td>
   <td>
     ${libro.imagen
-      ? `<img src="${libro.imagen}" width="50">`
+      ? `<img src="${libro.imagen}" width="50" class="libro-thumb" data-src="${libro.imagen}" style="cursor:pointer;" alt="Imagen libro">`
       : `<span class="text-muted">Sin imagen</span>`}
   </td>
   <td>${libro.categoria}</td>
@@ -136,6 +142,55 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+    // Manejar preview de la URL de imagen en el formulario (opcional)
+    function actualizarPreviewImagen(url) {
+      const errEl = document.getElementById('errorImagen');
+      if (!url) {
+        if (imagenPreviewContainer) imagenPreviewContainer.style.display = 'none';
+        if (imagenPreview) imagenPreview.src = '';
+        if (errEl) errEl.textContent = '';
+        return;
+      }
+
+      // Probar carga de la imagen antes de mostrar
+      const img = new Image();
+      img.onload = () => {
+        if (imagenPreview) imagenPreview.src = url;
+        if (imagenPreviewContainer) imagenPreviewContainer.style.display = 'block';
+        if (errEl) errEl.textContent = '';
+      };
+      img.onerror = () => {
+        if (imagenPreviewContainer) imagenPreviewContainer.style.display = 'none';
+        if (imagenPreview) imagenPreview.src = '';
+        if (errEl) errEl.textContent = 'No se pudo cargar la imagen. Verifica la URL.';
+      };
+      img.src = url;
+    }
+
+    if (imagenInput) {
+      imagenInput.addEventListener('input', () => {
+        const url = imagenInput.value.trim();
+        actualizarPreviewImagen(url);
+      });
+    }
+
+    // Abrir modal con imagen ampliada al hacer clic en miniatura
+    tablaLibros.addEventListener('click', (e) => {
+      const target = e.target;
+      if (target && target.classList && target.classList.contains('libro-thumb')) {
+        const src = target.dataset.src || target.src;
+        if (modalImagenImg) modalImagenImg.src = src;
+        if (bs) {
+          try {
+            const m = new bs.Modal(document.getElementById('modalImagenView'));
+            m.show();
+          } catch (err) {
+            console.warn('No se pudo abrir modal de imagen:', err);
+          }
+        }
+      }
+    });
+
   // Clicks en los botones de la tabla
   tablaLibros.addEventListener("click", async (e) => {
     // Si se hizo clic en "Editar"
@@ -152,6 +207,8 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("autor").value = libro.autor;
       document.getElementById("isbn").value = libro.isbn;
       document.getElementById("imagen").value = libro.imagen;
+      // Mostrar preview si hay imagen
+      actualizarPreviewImagen(libro.imagen);
       document.getElementById("categoria").value = libro.categoria;
       document.getElementById("cantidad").value = libro.cantidad;
       document.getElementById("estado").value = libro.estado;
@@ -273,9 +330,9 @@ document.addEventListener("DOMContentLoaded", () => {
   <td>${libro.autor}</td>
   <td>${libro.isbn || ""}</td>
   <td>
-    ${libro.imagen
-      ? `<img src="${libro.imagen}" width="50">`
-      : `<span class="text-muted">Sin imagen</span>`}
+      ${libro.imagen
+        ? `<img src="${libro.imagen}" width="50" class="libro-thumb" data-src="${libro.imagen}" style="cursor:pointer;" alt="Imagen libro">`
+        : `<span class="text-muted">Sin imagen</span>`}
   </td>
   <td>${libro.categoria}</td>
   <td>${libro.cantidad}</td>

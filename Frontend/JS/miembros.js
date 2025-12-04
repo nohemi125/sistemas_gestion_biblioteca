@@ -8,6 +8,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const tablaMiembros = document.getElementById("tablaMiembros");
   const buscador = document.getElementById("buscadorMiembro");
   const filtroTipo = document.getElementById("filtroTipo");
+  // Estado de filtros actuales (texto y tipo) para reutilizar entre llamadas
+  let filtroTextoActual = "";
+  let filtroTipoActual = "";
   let miembroEditandoId = null;
   let idAEliminar = null;
 
@@ -82,6 +85,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!valido) return;
 
+    // Validar unicidad de Id, email y celular consultando miembros existentes
+    try {
+      const duplicates = await validarUnicidad(nuevoMiembro, miembroEditandoId);
+      let hasDup = false;
+      if (duplicates.id) {
+        const el = document.getElementById("errorId");
+        if (el) el.textContent = "Ya existe un usuario con este Id.";
+        hasDup = true;
+      }
+      if (duplicates.email) {
+        const el = document.getElementById("errorEmail");
+        if (el) el.textContent = "Ya existe un usuario con este correo.";
+        hasDup = true;
+      }
+      if (duplicates.celular) {
+        const el = document.getElementById("errorCelular");
+        if (el) el.textContent = "Ya existe un usuario con ese número de celular.";
+        hasDup = true;
+      }
+      if (hasDup) return;
+    } catch (err) {
+      // Si falla la validación remota/local, dejamos continuar y que el servidor valide estrictamente
+      console.warn('No se pudo validar unicidad en cliente:', err);
+    }
+
 
     try {
       let url = `${BASE_URL}/api/miembros`;
@@ -109,7 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         form.reset();
         miembroEditandoId = null;
-        cargarMiembros();
+        cargarMiembros(filtroTextoActual, filtroTipoActual);
         const modal = bootstrap.Modal.getInstance(document.getElementById("modalMiembro"));
         modal.hide();
       } else {
@@ -121,35 +149,64 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Cargar miembros desde la BD (acepta filtro opcional)
-  async function cargarMiembros(filtro = "") {
+  // Cargar miembros desde la BD (acepta filtro de texto y filtro por tipo: "Activo" | "Inactivo" | "")
+  async function cargarMiembros(filtroTexto = "", tipo = "") {
     try {
+      // Guardar estado de filtros actuales
+      filtroTextoActual = filtroTexto || "";
+      filtroTipoActual = tipo || "";
+
       let url = `${BASE_URL}/api/miembros`;
-      if (filtro && filtro.trim() !== "") {
+      if (filtroTexto && filtroTexto.trim() !== "") {
         // Usar endpoint de búsqueda del backend
-        url = `${BASE_URL}/api/miembros/buscar?filtro=${encodeURIComponent(filtro)}`;
+        url = `${BASE_URL}/api/miembros/buscar?filtro=${encodeURIComponent(filtroTexto)}`;
       }
       const response = await fetch(url, { credentials: "include" });
       const miembros = await response.json();
 
       tablaMiembros.innerHTML = "";
 
-      miembros.forEach(miembro => {
+      // Si el usuario solicitó filtrar por estado, aplicar filtro en cliente
+      let lista = Array.isArray(miembros) ? miembros : [];
+      if (tipo === "Activo") {
+        lista = lista.filter(m => m.activo === 1 || m.activo === '1' || m.activo === true || m.activo === 'true');
+      } else if (tipo === "Inactivo") {
+        lista = lista.filter(m => m.activo === 0 || m.activo === '0' || m.activo === false || m.activo === 'false');
+      }
+
+      lista.forEach(miembro => {
         const fila = document.createElement("tr");
-        fila.innerHTML = `
-          <td>${miembro.id}</td>
-          <td>${miembro.nombres}</td>
-          <td>${miembro.apellidos}</td>
-          <td>${miembro.email}</td>
-          <td>${miembro.direccion}</td>
-          <td>${miembro.celular}</td>
-          <td>${new Date(miembro.fecha_inscripcion).toLocaleDateString('es-CO')}</td>
-          <td>
-              <i class="bi bi-eye text-primary btn-ver" data-id="${miembro.id_miembro}" style="cursor:pointer; font-size:1.2rem;" title="Ver detalle"></i>
-              <i class="bi bi-pencil-square text-warning btn-editar" data-id="${miembro.id_miembro}" style="cursor:pointer; font-size:1.2rem; margin-left:8px;" title="Editar"></i>
-              <i class="bi bi-trash text-danger btn-eliminar" data-id="${miembro.id_miembro}" style="cursor:pointer; font-size:1.2rem; margin-left:8px;" title="Eliminar"></i>
-          </td>
-        `;
+        // Mostrar acciones diferentes según el estado activo
+        const fechaText = miembro.fecha_inscripcion ? new Date(miembro.fecha_inscripcion).toLocaleDateString('es-CO') : '';
+        if (miembro.activo === 0 || miembro.activo === '0' || miembro.activo === false) {
+          fila.innerHTML = `
+            <td>${miembro.id}</td>
+            <td>${miembro.nombres}</td>
+            <td>${miembro.apellidos}</td>
+            <td>${miembro.email}</td>
+            <td>${miembro.direccion}</td>
+            <td>${miembro.celular}</td>
+            <td>${fechaText}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-secondary btn-activar" data-id="${miembro.id_miembro}">Inactivo</button>
+            </td>
+          `;
+        } else {
+          fila.innerHTML = `
+            <td>${miembro.id}</td>
+            <td>${miembro.nombres}</td>
+            <td>${miembro.apellidos}</td>
+            <td>${miembro.email}</td>
+            <td>${miembro.direccion}</td>
+            <td>${miembro.celular}</td>
+            <td>${fechaText}</td>
+            <td>
+                <i class="bi bi-eye text-primary btn-ver" data-id="${miembro.id_miembro}" style="cursor:pointer; font-size:1.2rem;" title="Ver detalle"></i>
+                <i class="bi bi-pencil-square text-warning btn-editar" data-id="${miembro.id_miembro}" style="cursor:pointer; font-size:1.2rem; margin-left:8px;" title="Editar"></i>
+                <i class="bi bi-trash text-danger btn-inactivar" data-id="${miembro.id_miembro}" style="cursor:pointer; font-size:1.2rem; margin-left:8px;" title="Inactivar"></i>
+            </td>
+          `;
+        }
         tablaMiembros.appendChild(fila);
       });
     } catch (error) {
@@ -166,26 +223,58 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
+  // Valida unicidad de campos (id, email, celular) consultando la lista de miembros
+  // Excluye el miembro en edición si se proporciona su id de base de datos (id_miembro)
+  async function validarUnicidad(nuevoMiembro, excluirId_miembro = null) {
+    const result = { id: false, email: false, celular: false };
+    try {
+      const resp = await fetch(`${BASE_URL}/api/miembros`, { credentials: 'include' });
+      if (!resp.ok) return result; // no available data to validate
+      const miembros = await resp.json();
+      if (!Array.isArray(miembros)) return result;
+
+      const idToCheck = (nuevoMiembro.id || '').trim();
+      const emailToCheck = (nuevoMiembro.email || '').trim().toLowerCase();
+      const celToCheck = (nuevoMiembro.celular || '').trim();
+
+      for (const m of miembros) {
+        // Cuando se edita, excluir el mismo registro
+        if (excluirId_miembro && String(m.id_miembro) === String(excluirId_miembro)) continue;
+
+        if (idToCheck && String(m.id) === String(idToCheck)) result.id = true;
+        if (emailToCheck && String(m.email).toLowerCase() === emailToCheck) result.email = true;
+        if (celToCheck && String(m.celular) === String(celToCheck)) result.celular = true;
+
+        // Si ya encontramos todas las coincidencias, terminar
+        if (result.id && result.email && result.celular) break;
+      }
+
+      return result;
+    } catch (err) {
+      console.warn('Error validando unicidad:', err);
+      return result;
+    }
+  }
+
   // Manejo del buscador
   const handleBuscar = debounce(() => {
     const valor = buscador ? buscador.value.trim() : "";
     const tipo = filtroTipo ? filtroTipo.value : "";
+    filtroTextoActual = valor;
+    filtroTipoActual = tipo;
 
-    // Si hay un filtro por tipo (Activo/Inactivo) podrías combinarlo aquí.
-    // Por ahora priorizamos la búsqueda por texto.
-    if (valor === "") {
-      cargarMiembros();
-    } else {
-      cargarMiembros(valor);
-    }
+    // Llamar cargarMiembros con ambos filtros
+    cargarMiembros(valor, tipo);
   }, 300);
 
   if (buscador) buscador.addEventListener('input', handleBuscar);
   if (filtroTipo) filtroTipo.addEventListener('change', () => {
-    // Reutilizamos cargarMiembros, podrías adaptar para enviar tipo al backend
+    // Actualizar filtros actuales y recargar
     const valor = buscador ? buscador.value.trim() : "";
-    if (valor) cargarMiembros(valor);
-    else cargarMiembros();
+    const tipo = filtroTipo.value;
+    filtroTextoActual = valor;
+    filtroTipoActual = tipo;
+    cargarMiembros(valor, tipo);
   });
 
   // Click en Ver / Editar / Eliminar
@@ -208,13 +297,31 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("email").value = miembro.email;
       document.getElementById("direccion").value = miembro.direccion;
       document.getElementById("celular").value = miembro.celular;
-      document.getElementById("fechaInscripcion").value = miembro.fecha_inscripcion;
+      // Asegurarse de establecer el input[type=date] en formato YYYY-MM-DD
+      const fechaInput = document.getElementById("fechaInscripcion");
+      if (fechaInput) {
+        if (miembro.fecha_inscripcion) {
+          const d = new Date(miembro.fecha_inscripcion);
+          if (!isNaN(d)) {
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            fechaInput.value = `${yyyy}-${mm}-${dd}`;
+          } else {
+            // Si no es una fecha válida, intentar asignar la cadena tal cual
+            fechaInput.value = miembro.fecha_inscripcion;
+          }
+        } else {
+          fechaInput.value = '';
+        }
+      }
 
       const modal = new bootstrap.Modal(document.getElementById("modalMiembro"));
       modal.show();
     }
 
-    if (e.target.classList.contains("btn-eliminar")) {
+    if (e.target.classList.contains("btn-inactivar")) {
+      // Mostrar confirmación y llamar al endpoint para marcar inactivo
       idAEliminar = e.target.dataset.id;
       const modalConfirmar = new bootstrap.Modal(document.getElementById("modalConfirmar"));
       modalConfirmar.show();
@@ -222,24 +329,49 @@ document.addEventListener("DOMContentLoaded", () => {
       const btnConfirmar = document.getElementById("btnConfirmarEliminar");
       btnConfirmar.onclick = async () => {
         try {
-          const response = await fetch(`${BASE_URL}/api/miembros/${idAEliminar}`, {
-            method: "DELETE",
-            credentials: "include"
+          const response = await fetch(`${BASE_URL}/api/miembros/${idAEliminar}/estado`, {
+            method: "PATCH",
+            credentials: "include",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ activo: false })
           });
           const data = await response.json();
 
           if (response.ok) {
-            mostrarToast("Miembro eliminado correctamente", "success");
-            cargarMiembros();
+            mostrarToast("Miembro inactivado correctamente", "success");
+            cargarMiembros(filtroTextoActual, filtroTipoActual);
           } else {
-            mostrarToast("Error al eliminar miembro: " + data.error, "danger");
+            mostrarToast("Error al inactivar miembro: " + (data.error || data.mensaje), "danger");
           }
         } catch (error) {
-          console.error("Error al eliminar miembro:", error);
-          mostrarToast("No se pudo eliminar el miembro", "danger");
+          console.error("Error al inactivar miembro:", error);
+          mostrarToast("No se pudo inactivar el miembro", "danger");
         }
         modalConfirmar.hide();
       };
+    }
+
+    // Reactivar miembro desde el botón 'Inactivo'
+    if (e.target.classList.contains('btn-activar')) {
+      const id = e.target.dataset.id;
+      try {
+        const response = await fetch(`${BASE_URL}/api/miembros/${id}/estado`, {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ activo: true })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          mostrarToast('Miembro reactivado correctamente', 'success');
+          cargarMiembros(filtroTextoActual, filtroTipoActual);
+        } else {
+          mostrarToast('Error al reactivar: ' + (data.error || data.mensaje), 'danger');
+        }
+      } catch (err) {
+        console.error('Error reactivando miembro:', err);
+        mostrarToast('No se pudo reactivar el miembro', 'danger');
+      }
     }
     
     // Enviar notificación manual
@@ -442,7 +574,7 @@ function descargarHistorialPrestamos() {
 
 
   // Inicializar
-  cargarMiembros();
+  cargarMiembros(filtroTextoActual, filtroTipoActual);
 
   // Manejo del formulario de envío de notificación
   const formEnviarNoti = document.getElementById('formEnviarNotificacion');

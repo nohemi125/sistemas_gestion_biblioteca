@@ -1,22 +1,23 @@
 const db = require('../config/db');
 
 const Miembro = {
-  //  Obtener todos los miembros
+  //  Obtener todos los miembros (incluye estado 'activo' para borrado lógico)
   async obtenerTodos() {
-  const [rows] = await db.query(`
-    SELECT 
-      id_miembro,
-      id,
-      nombres,
-      apellidos,
-      email,
-      direccion,
-      celular,
-      fecha_inscripcion
-    FROM miembros
-  `);
-  return rows;
-},
+    const [rows] = await db.query(`
+      SELECT 
+        id_miembro,
+        id,
+        nombres,
+        apellidos,
+        email,
+        direccion,
+        celular,
+        fecha_inscripcion,
+        COALESCE(activo, 1) AS activo
+      FROM miembros
+    `);
+    return rows;
+  },
 
 
   //  Obtener un miembro por ID
@@ -30,9 +31,9 @@ const Miembro = {
     const { id, nombres, apellidos, email, celular, direccion, fecha_inscripcion } = datos;
 
     const [result] = await db.query(
-      `INSERT INTO miembros (id, nombres, apellidos, email, celular, direccion, fecha_inscripcion)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [id, nombres, apellidos, email, celular, direccion, fecha_inscripcion]
+      `INSERT INTO miembros (id, nombres, apellidos, email, celular, direccion, fecha_inscripcion, activo)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, nombres, apellidos, email, celular, direccion, fecha_inscripcion, 1]
     );
 
     return { id_miembro: result.insertId, ...datos };
@@ -59,22 +60,28 @@ const Miembro = {
     await db.query(sql, valores);
   },
 
-  //  Eliminar miembro
+  //  Eliminar miembro (borrado lógico: marcar como inactivo)
   async eliminar(id) {
-    // Comprobar si el miembro tiene préstamos u otras referencias que impidan el borrado
+    // Borrado lógico: marcar activo = 0 si no tiene préstamos activos
     try {
-      const [refs] = await db.query('SELECT COUNT(*) AS cnt FROM prestamos WHERE id_miembro = ?', [id]);
+      const [refs] = await db.query("SELECT COUNT(*) AS cnt FROM prestamos WHERE id_miembro = ? AND estado = 'Activo'", [id]);
       if (refs && refs[0] && refs[0].cnt > 0) {
         const err = new Error('MIEMBRO_TIENE_PRESTAMOS');
         err.code = 'MIEMBRO_TIENE_PRESTAMOS';
         throw err;
       }
 
-      const [result] = await db.query('DELETE FROM miembros WHERE id_miembro = ?', [id]);
+      const [result] = await db.query('UPDATE miembros SET activo = 0 WHERE id_miembro = ?', [id]);
       return result;
     } catch (error) {
       throw error;
     }
+  },
+
+  // Cambiar estado activo/inactivo
+  async setActivo(id, activo) {
+    const [result] = await db.query('UPDATE miembros SET activo = ? WHERE id_miembro = ?', [activo ? 1 : 0, id]);
+    return result;
   },
 
   //  Buscar miembros (por nombre o correo)
@@ -88,7 +95,8 @@ const Miembro = {
       email,
       celular,
       direccion,
-      fecha_inscripcion
+      fecha_inscripcion,
+      COALESCE(activo, 1) AS activo
     FROM miembros
     WHERE 1=1
   `;
