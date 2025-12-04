@@ -325,11 +325,11 @@
           <form id="formRecordatorio">
             <div class="mb-3">
               <label class="form-label">Asunto</label>
-              <input type="text" class="form-control" id="asuntoRecordatorio" value="Recordatorio de Devolución de Libro" required>
+              <input type="text" class="form-control" id="asuntoRecordatorio" value="Recordatorio de Devolución de Libro" readonly>
             </div>
             <div class="mb-3">
               <label class="form-label">Mensaje</label>
-              <textarea class="form-control" rows="5" id="mensajeRecordatorio" required>Estimado/a Juan Pérez,
+              <textarea class="form-control" rows="5" id="mensajeRecordatorio">Estimado/a Juan Pérez,
 
 Le recordamos que el libro "Cien años de soledad" debe ser devuelto el 29/12/2024.
 
@@ -374,18 +374,18 @@ Gracias por su colaboración.</textarea>
         <form id="formMulta">
           <div class="mb-3">
             <label class="form-label">Monto de la Multa ($)</label>
-            <input type="number" class="form-control" id="montoMulta" value="5.00" step="0.01" required>
-            <small class="text-muted">$1.00 por día de retraso</small>
+            <input type="number" class="form-control" id="montoMulta" value="5.00" step="0.01" readonly>
+            <!-- <small class="text-muted">$1.00 por día de retraso</small> -->
           </div>
 
           <div class="mb-3">
             <label class="form-label">Asunto</label>
-            <input type="text" class="form-control" id="asuntoMulta" value="Notificación de Multa por Retraso" required>
+            <input type="text" class="form-control" id="asuntoMulta" value="Notificación de Multa por Retraso" readonly>
           </div>
 
           <div class="mb-3">
             <label class="form-label">Mensaje</label>
-            <textarea class="form-control" rows="6" id="mensajeMulta" required>Estimado/a María González,
+            <textarea class="form-control" rows="6" id="mensajeMulta">Estimado/a María González,
 
 Le informamos que el libro "El Principito" fue devuelto con 0 días de retraso.
 

@@ -53,9 +53,11 @@ const plantillaRecordatorio = async ({ nombreMiembro, tituloLibro, fechaDevoluci
   } catch (e) {
     institucion = null;
   }
-  const nombreInst = (institucion && (institucion.nombrePlataforma || institucion.nombre)) || 'Biblioteca Municipal';
-  const telefonoInst = (institucion && institucion.telefono) || '';
-  const correoInst = (institucion && (institucion.correo || institucion.email)) || '';
+  // Priorizar cualquier campo que pueda almacenar el nombre visible de la institución.
+  // Algunas filas pueden usar `nombre`, otras `nombreInstitucion` o `nombrePlataforma`.
+  const nombreInst = (institucion && (institucion.nombre || institucion.nombreInstitucion || institucion.nombrePlataforma)) || 'Biblioteca Municipal';
+  const telefonoInst = (institucion && (institucion.telefono || institucion.telefonoInstitucion || institucion.telefono_institucion)) || '';
+  const correoInst = (institucion && (institucion.smtp_correo || institucion.smtpCorreo || institucion.correo || institucion.email)) || '';
   const direccionInst = (institucion && institucion.direccion) || '';
 
   return `
@@ -76,6 +78,7 @@ const plantillaRecordatorio = async ({ nombreMiembro, tituloLibro, fechaDevoluci
       <div class="container">
         <div class="header">
           <h1>Recordatorio de Devolución</h1>
+          <div style="font-size:14px;margin-top:6px;opacity:0.95">${nombreInst}</div>
         </div>
         <div class="content">
           <p>Hola <strong>${nombreMiembro}</strong>,</p>
@@ -94,7 +97,7 @@ const plantillaRecordatorio = async ({ nombreMiembro, tituloLibro, fechaDevoluci
           
           <p>¡Gracias por utilizar nuestros servicios!</p>
           
-          <p><em>Sistema de Gestión de Biblioteca</em></p>
+          <p><em>${nombreInst}</em></p>
         </div>
         <div class="footer">
           <p>Este es un mensaje automático, por favor no respondas a este correo.</p>
@@ -117,9 +120,10 @@ const plantillaMulta = async ({ nombreMiembro, tituloLibro, diasRetraso, montoMu
   } catch (e) {
     institucion = null;
   }
-  const nombreInst = (institucion && (institucion.nombrePlataforma || institucion.nombre)) || 'Biblioteca Municipal';
+  // Priorizar cualquier campo que pueda almacenar el nombre visible de la institución.
+  const nombreInst = (institucion && (institucion.nombre || institucion.nombreInstitucion || institucion.nombrePlataforma)) || 'Biblioteca Municipal';
   const telefonoInst = (institucion && institucion.telefono) || '';
-  const correoInst = (institucion && (institucion.correo || institucion.email)) || '';
+  const correoInst = (institucion && (institucion.smtp_correo || institucion.smtpCorreo || institucion.correo || institucion.email)) || '';
   const direccionInst = (institucion && institucion.direccion) || '';
 
   return `
@@ -140,6 +144,7 @@ const plantillaMulta = async ({ nombreMiembro, tituloLibro, diasRetraso, montoMu
       <div class="container">
         <div class="header">
           <h1>⚠️ Aviso de Multa por Retraso</h1>
+          <div style="font-size:14px;margin-top:6px;opacity:0.95">${nombreInst}</div>
         </div>
         <div class="content">
           <p>Estimado/a <strong>${nombreMiembro}</strong>,</p>
@@ -166,7 +171,7 @@ const plantillaMulta = async ({ nombreMiembro, tituloLibro, diasRetraso, montoMu
           
           <p>Agradecemos tu comprensión y cooperación.</p>
           
-          <p><em>Sistema de Gestión de Biblioteca</em></p>
+          <p><em>${nombreInst}</em></p>
         </div>
         <div class="footer">
           <p>Este es un mensaje automático, por favor no respondas a este correo.</p>

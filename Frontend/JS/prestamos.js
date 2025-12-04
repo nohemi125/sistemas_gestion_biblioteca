@@ -485,9 +485,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const instJson = await instResp.json()
             if (instJson && instJson.data) {
               const d = instJson.data
-              nombreInst = d.nombrePlataforma || d.nombre || nombreInst
-              telefonoInst = d.telefono || telefonoInst
-              correoInst = d.correo || d.email || correoInst
+              // Priorizar el nombre real de la institución (campo `nombre`) antes que el nombre de plataforma
+              nombreInst = d.nombre || d.nombrePlataforma || d.nombreInstitucion || nombreInst
+              telefonoInst = d.telefono || d.telefonoInstitucion || d.telefono_institucion || telefonoInst
+              correoInst = d.smtp_correo || d.smtpCorreo || d.correo || d.email || correoInst
             }
           }
         } catch (e) {
@@ -593,9 +594,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const instJson = await instResp.json()
             if (instJson && instJson.data) {
               const d = instJson.data
-              nombreInst = d.nombrePlataforma || d.nombre || nombreInst
-              telefonoInst = d.telefono || telefonoInst
-              correoInst = d.correo || d.email || correoInst
+              // Priorizar el nombre real de la institución (campo `nombre`) antes que el nombre de plataforma
+              nombreInst = d.nombre || d.nombrePlataforma || d.nombreInstitucion || nombreInst
+              telefonoInst = d.telefono || d.telefonoInstitucion || d.telefono_institucion || telefonoInst
+              correoInst = d.smtp_correo || d.smtpCorreo || d.correo || d.email || correoInst
               direccionInst = d.direccion || ''
             }
           }
@@ -622,7 +624,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ``,
           `Hemos registrado un retraso en la devolución de:`,
           `📖 ${libro}`,
-          `*🔖 Préstamo:* P${String(id).padStart(3, '0')}`,
+          // `*🔖 Préstamo:* P${String(id).padStart(3, '0')}`,
           `*⏳ Días de retraso:* ${diasRetrasoTotal} (se cobran ${diasACobrar} día(s) al valor de $${valorPorDia.toFixed(2)})`,
           `*💰 Monto de la multa:* $${montoCalculado.toFixed(2)}`,
           ``,

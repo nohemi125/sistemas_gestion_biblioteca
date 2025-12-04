@@ -117,6 +117,9 @@ document.getElementById("formInstitucion").addEventListener("submit", async (e) 
   formData.append("nombre", document.getElementById("nombreInstitucion").value);
   formData.append("telefono", document.getElementById("telefonoInstitucion").value);
   formData.append("direccion", document.getElementById("direccionInstitucion").value);
+  // incluir el correo SMTP si el formulario lo tiene
+  const smtpInput = document.getElementById('smtpCorreo');
+  if (smtpInput && smtpInput.value) formData.append('smtpCorreo', smtpInput.value);
 
   const logo = document.getElementById("inputLogo").files[0];
   if (logo) {
@@ -164,6 +167,11 @@ document.getElementById("formInstitucion").addEventListener("submit", async (e) 
         if (lp) lp.src = logoPath;
         if (lps) lps.src = logoPath;
       }
+      // si el backend devolvió correo, actualizar el campo smtpCorreo
+      try {
+        const smtpField = document.getElementById('smtpCorreo');
+        if (smtpField) smtpField.value = saved.correo || document.getElementById('smtpCorreo').value || '';
+      } catch (e) {}
     }
 
     showModalMessage('Éxito', data.mensaje || 'Guardado correctamente', 'success');
@@ -196,6 +204,18 @@ async function cargarVistaPrevia() {
     if (nombreInput) nombreInput.value = row.nombre || '';
     if (telefonoInput) telefonoInput.value = row.telefono || '';
     if (direccionInput) direccionInput.value = row.direccion || '';
+    // Rellenar campo smtpCorreo si existe en la fila
+    const smtpField = document.getElementById('smtpCorreo');
+    if (smtpField) smtpField.value = row.correo || row.smtp_correo || row.smtpCorreo || row.email || '';
+    const provField = document.getElementById('smtpProveedor');
+    if (provField) provField.value = row.smtp_proveedor || row.smtpProveedor || provField.value || 'gmail';
+    const hostField = document.getElementById('smtpHost');
+    if (hostField) hostField.value = row.smtp_host || row.smtpHost || '';
+    const puertoField = document.getElementById('smtpPuerto');
+    if (puertoField) puertoField.value = row.smtp_puerto || row.smtpPuerto || '';
+    // Rellenar contraseña SMTP con lo guardado para que permanezca en el formulario hasta que se cambie
+    const passField = document.getElementById('smtpContrasena');
+    if (passField) passField.value = row.smtp_contrasena || row.smtpContrasena || '';
 
     // Logo (se sirve en /uploads/logos/filename)
     if (row.logo) {
@@ -528,6 +548,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
   cargarMulta();
 
+  // Manejar envío del formulario SMTP y mostrar modal como los demás formularios
+  const formSMTP = document.getElementById('formSMTP');
+  if (formSMTP) {
+    formSMTP.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const proveedor = document.getElementById('smtpProveedor').value;
+      const correo = document.getElementById('smtpCorreo').value;
+      const contrasena = document.getElementById('smtpContrasena').value;
+      const host = document.getElementById('smtpHost').value;
+      const puerto = document.getElementById('smtpPuerto').value;
+
+      const mensajeEl = document.getElementById('mensajeSMTP');
+      try {
+        const resp = await fetch('/api/perfil/smtp', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ proveedor, correo, contrasena, host, puerto })
+        });
+        const data = await resp.json();
+        if (resp.ok && data.ok) {
+          // Mostrar mensaje inline (coherente con los demás formularios)
+          if (mensajeEl) mensajeEl.innerHTML = `<div class="alert alert-success"><i class="bi bi-check-circle me-2"></i>${data.mensaje || 'Configuración SMTP guardada'}</div>`;
+          // Mantener los valores en el formulario (el usuario pidió que se quede hasta que se cambie)
+        } else {
+          if (mensajeEl) mensajeEl.innerHTML = `<div class="alert alert-danger"><i class="bi bi-exclamation-circle me-2"></i>${(data && data.mensaje) || 'Error guardando configuración SMTP'}</div>`;
+        }
+      } catch (err) {
+        console.error('Error guardando SMTP:', err);
+        if (mensajeEl) mensajeEl.innerHTML = `<div class="alert alert-danger"><i class="bi bi-exclamation-circle me-2"></i>Error de red al guardar configuración SMTP</div>`;
+      }
+      // Borrar el mensaje automáticamente después de 4s para limpiar la UI
+      try { if (mensajeEl) setTimeout(() => { if (mensajeEl) mensajeEl.innerHTML = ''; }, 4000); } catch(e) {}
+    });
+  }
+
 
 
   // FORMULARIO GUARDAR MULTA
@@ -564,11 +620,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-// FORMIULARIO SMTP AUTOMÁTICO
+
+// FORMULARIO SMTP AUTOMÁTICO
 const proveedor = document.getElementById("smtpProveedor");
 const extra = document.getElementById("extraConfig");
 const host = document.getElementById("smtpHost");
 const puerto = document.getElementById("smtpPuerto");
+const formSMTP = document.getElementById("formSMTP");
 
 proveedor.addEventListener("change", () => {
   const value = proveedor.value;
@@ -595,6 +653,33 @@ proveedor.addEventListener("change", () => {
     extra.style.display = "block";
     host.value = "";
     puerto.value = "";
+  }
+});
+
+
+// GUARDAR CONFIGURACIÓN SMTP
+formSMTP.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const data = {
+    proveedor: proveedor.value,
+    correo: document.getElementById("smtpCorreo").value,
+    contrasena: document.getElementById("smtpContrasena").value,
+    host: host.value,
+    puerto: puerto.value
+  };
+
+  const request = await fetch("/api/perfil/smtp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+
+  const response = await request.json();
+
+  if (response.ok) {
+  } else {
+    alert("Error al guardar SMTP");
   }
 });
 

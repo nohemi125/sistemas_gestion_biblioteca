@@ -144,6 +144,76 @@ const guardarPersonalizacion = async (data) => {
   }
 };
 
+// Guardar configuración SMTP (proveedor, host, puerto, correo, contrasena)
+Institucion.guardarSMTP = async function(data) {
+  const existente = await Institucion.obtenerInstitucion();
+  if (existente) {
+    const id = existente.id_institucion || existente.id;
+    await db.query(
+      'UPDATE institucion SET smtp_proveedor = ?, smtp_host = ?, smtp_puerto = ?, smtp_correo = ?, smtp_contrasena = ? WHERE id_institucion = ?',
+      [data.smtpProveedor || null, data.smtpHost || null, data.smtpPuerto || null, data.smtpCorreo || null, data.smtpContrasena || null, id]
+    );
+    return { id_institucion: id, ...data };
+  } else {
+    const [result] = await db.query(
+      'INSERT INTO institucion (smtp_proveedor, smtp_host, smtp_puerto, smtp_correo, smtp_contrasena) VALUES (?, ?, ?, ?, ?)',
+      [data.smtpProveedor || null, data.smtpHost || null, data.smtpPuerto || null, data.smtpCorreo || null, data.smtpContrasena || null]
+    );
+    return { id_institucion: result.insertId, ...data };
+  }
+};
+
+
+
+// Configuración SMTP
+const SMTP = {
+
+  async obtenerConfig() {
+    const [rows] = await db.query("SELECT smtp_proveedor, smtp_correo, smtp_contrasena, smtp_host, smtp_puerto FROM institucion LIMIT 1");
+    return rows[0] || null;
+  },
+
+  async guardarConfig(data) {
+    // Ver si ya existe un registro en la tabla institucion
+    const [rows] = await db.query("SELECT id_institucion FROM institucion LIMIT 1");
+
+    // Normalizar puerto: convertir a número o dejar NULL si viene vacío
+    const puertoVal = data && data.puerto ? Number(data.puerto) : null;
+    if (rows.length > 0) {
+      // actualizar
+      await db.query(`
+        UPDATE institucion
+        SET smtp_proveedor=?, smtp_correo=?, smtp_contrasena=?, smtp_host=?, smtp_puerto=?
+        WHERE id_institucion=?
+      `, [
+        data.proveedor,
+        data.correo,
+        data.contrasena,
+        data.host,
+        puertoVal,
+        rows[0].id_institucion
+      ]);
+
+      return { id_institucion: rows[0].id_institucion, ...data };
+    }
+
+    // si no existe, insertar
+    const [result] = await db.query(`
+      INSERT INTO institucion (smtp_proveedor, smtp_correo, smtp_contrasena, smtp_host, smtp_puerto)
+      VALUES (?, ?, ?, ?, ?)
+    `, [
+      data.proveedor,
+      data.correo,
+      data.contrasena,
+      data.host,
+      puertoVal
+    ]);
+
+    return { id_institucion: result.insertId, ...data };
+  }
+
+};
+
 
 
 
@@ -160,6 +230,9 @@ module.exports = {
   obtenerMulta: Multa.obtenerMulta,
   guardarMulta: Multa.guardarMulta,
   obtenerPersonalizacion,
-guardarPersonalizacion,
+  guardarPersonalizacion,
+  guardarSMTP: Institucion.guardarSMTP,
+  obtenerSMTP: SMTP.obtenerConfig,
+  guardarSMTP: SMTP.guardarConfig
 
 };

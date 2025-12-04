@@ -132,21 +132,22 @@ async function formatWhatsAppRecordatorio(prestamo, fechaDevolucion) {
   } catch (e) {
     institucion = null;
   }
-  const nombreInst = (institucion && (institucion.nombrePlataforma || institucion.nombre)) || 'Biblioteca Municipal';
-  const telefonoInst = (institucion && (institucion.telefono || institucion.telefono_institucion)) || '310 123 4567';
-  const correoInst = (institucion && (institucion.correo || institucion.email)) || 'biblioteca@ejemplo.com';
+  // Priorizar el nombre real de la institución si existe
+  const nombreInst = (institucion && (institucion.nombre || institucion.nombrePlataforma)) || 'Biblioteca Municipal';
+  const telefonoInst = (institucion && (institucion.telefono || institucion.telefonoInstitucion || institucion.telefono_institucion)) || '310 123 4567';
+  const correoInst = (institucion && (institucion.smtp_correo || institucion.smtpCorreo || institucion.correo || institucion.email)) || 'biblioteca@ejemplo.com';
   const direccionInst = (institucion && institucion.direccion) || '';
 
   // Plantilla profesional con encabezado, detalles y CTA
   return [
-    `*📚 Recordatorio de Devolución — ${nombreInst}*`,
+    `*📚 Recordatorio de Devolución—${nombreInst}*`,
     ``,
     `Hola *${prestamo.nombre_miembro}* 👋,`,
     ``,
     `Te recordamos que tienes un libro pendiente de devolución:`,
     `*📖 ${prestamo.titulo_libro}*`,
     `*📅 Fecha de devolución:* ${fechaDevolucion}`,
-    id ? `*🔖 Préstamo:* P${String(id).padStart(3, '0')}` : '',
+  
     ``,
     `Por favor entrega el libro en la fecha indicada para evitar recargos. Si necesitas una prórroga, responde a este mensaje indicando cuántos días necesitas.`,
     ``,
@@ -169,9 +170,10 @@ async function formatWhatsAppMulta(prestamo, diasRetraso, monto) {
   } catch (e) {
     institucion = null;
   }
-  const nombreInst = (institucion && (institucion.nombrePlataforma || institucion.nombre)) || 'Biblioteca Municipal';
-  const telefonoInst = (institucion && (institucion.telefono || institucion.telefono_institucion)) || '310 123 4567';
-  const correoInst = (institucion && (institucion.correo || institucion.email)) || 'biblioteca@ejemplo.com';
+  // Priorizar el nombre real de la institución si existe
+  const nombreInst = (institucion && (institucion.nombre || institucion.nombrePlataforma)) || 'Biblioteca Municipal';
+  const telefonoInst = (institucion && (institucion.telefono || institucion.telefonoInstitucion || institucion.telefono_institucion)) || '310 123 4567';
+  const correoInst = (institucion && (institucion.smtp_correo || institucion.smtpCorreo || institucion.correo || institucion.email)) || 'biblioteca@ejemplo.com';
   const direccionInst = (institucion && institucion.direccion) || '';
 
   // Plantilla profesional para multas con detalles y acciones sugeridas

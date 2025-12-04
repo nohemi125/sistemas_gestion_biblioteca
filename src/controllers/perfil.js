@@ -151,6 +151,45 @@ const obtenerPersonalizacion = async (req, res) => {
 
 
 
+// -------------------- SMTP --------------------
+const guardarSMTP = async (req, res) => {
+  try {
+    const { proveedor, correo, contrasena, host, puerto } = req.body;
+
+    // Validación mínima
+    if (!proveedor || !correo || !contrasena) {
+      return res.status(400).json({
+        ok: false,
+        mensaje: "Faltan datos obligatorios (proveedor, correo, contraseña)"
+      });
+    }
+
+    // Llamamos al modelo para guardar usando las claves que espera el modelo exportado
+    const saved = await modelos.guardarSMTP({
+      proveedor: proveedor,
+      correo: correo,
+      contrasena: contrasena,
+      host: host,
+      puerto: puerto
+    });
+
+    res.json({
+      ok: true,
+      mensaje: "Configuración SMTP guardada correctamente",
+      data: saved
+    });
+
+  } catch (err) {
+    console.error("Error en guardarSMTP:", err);
+    res.status(500).json({
+      ok: false,
+      mensaje: "Error al guardar configuración SMTP",
+      error: err.message
+    });
+  }
+};
+
+
 module.exports = {
   obtenerInstitucion,
   guardarInstitucion,
@@ -161,5 +200,6 @@ module.exports = {
   guardarMulta,
   guardarPersonalizacion,
  obtenerPersonalizacion,
+ guardarSMTP
 
 };

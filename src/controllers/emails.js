@@ -1,6 +1,7 @@
 const Prestamo = require('../models/prestamos');
 const Miembro = require('../models/miembros');
 const notifications = require('../services/notifications');
+const perfilModel = require('../models/perfil');
 
 /**
  * 📨 Enviar recordatorio de devolución
@@ -66,16 +67,12 @@ const enviarRecordatorio = async (req, res) => {
 	}
 };
 
-/**
- * 💰 Enviar notificación de multa
- */
+
+//   Enviar notificación de multa
+
 const enviarMulta = async (req, res) => {
 	try {
 		const { id_prestamo, monto_multa } = req.body;
-
-		if (!monto_multa || monto_multa <= 0) {
-			return res.status(400).json({ error: 'El monto de la multa es requerido y debe ser mayor a 0' });
-		}
 
 		// Obtener información del préstamo
 		const [prestamo] = await Prestamo.listarPorId(id_prestamo);
@@ -112,7 +109,7 @@ const enviarMulta = async (req, res) => {
 			return res.status(400).json({ error: 'El miembro no tiene correo registrado' });
 		}
 
-		// Calcular días de retraso
+		// Calcular días de retraso y aplicar días de tolerancia configurados
 		const fechaDevolucion = new Date(prestamo.fecha_devolucion);
 		const fechaActual = new Date();
 		const diasRetraso = Math.ceil((fechaActual - fechaDevolucion) / (1000 * 60 * 60 * 24));
@@ -121,14 +118,43 @@ const enviarMulta = async (req, res) => {
 			return res.status(400).json({ error: 'El préstamo no tiene días de retraso' });
 		}
 
+		// Obtener configuración de multa (valor por día y días de tolerancia)
+		let configMulta = null;
+		try {
+			configMulta = await perfilModel.obtenerMulta();
+		} catch (e) {
+			configMulta = null;
+		}
+
+		const diasTolerancia = Number((configMulta && (configMulta.dias_tolerancia || configMulta.diasTolerancia)) || 0);
+		const valorPorDia = Number((configMulta && (configMulta.valor_multa || configMulta.valorMulta)) || 0);
+
+		const diasSobreTolerancia = diasRetraso - diasTolerancia;
+		if (diasSobreTolerancia <= 0) {
+			return res.status(400).json({ error: 'Dentro del periodo de tolerancia. No aplica multa.', dias_retraso: diasRetraso, dias_tolerancia: diasTolerancia });
+		}
+
+		// Si no se envía monto_multa, calcular automáticamente: diasSobreTolerancia * valorPorDia
+		let montoFinal = null;
+		if (monto_multa && Number(monto_multa) > 0) {
+			montoFinal = Number(monto_multa);
+		} else {
+			if (valorPorDia <= 0) {
+				return res.status(400).json({ error: 'No hay valor por día configurado para calcular la multa. Establezca un valor en la configuración.' });
+			}
+			montoFinal = diasSobreTolerancia * valorPorDia;
+		}
+
 		// Delegar envío (según opción 'via')
 		const mensaje = req.body.mensaje || req.body.mensage || null;
-		await notifications.enviarMulta(prestamo, miembro, monto_multa, { via: viaNorm, canales, mensaje });
+		await notifications.enviarMulta(prestamo, miembro, montoFinal, { via: viaNorm, canales, mensaje });
 		res.json({
 			mensaje: 'Notificación de multa procesada',
 			destinatario: miembro.email,
-			monto: parseFloat(monto_multa),
+			monto: parseFloat(montoFinal),
 			dias_retraso: diasRetraso,
+			dias_sobre_tolerancia: diasSobreTolerancia,
+			dias_tolerancia: diasTolerancia,
 			solicitado: viaNorm || canales,
 		});
 	} catch (error) {

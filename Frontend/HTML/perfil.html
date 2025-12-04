@@ -263,6 +263,38 @@
 
 
 
+       <!-- Sección: Vista Previa -->
+      <div class="row">
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-header bg-success-gradient text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-eye me-2"></i>Vista Previa de la Personalización
+              </h5>
+            </div>
+            <div class="card-body text-center py-5">
+              <div class="preview-container">
+                <img src="/placeholder.svg?height=120&width=120" 
+                     alt="Logo preview" 
+                     class="preview-logo mb-3" 
+                     id="logoPreviewSmall">
+                 <h2 class="preview-nombre mb-2" id="previewNombreInstitucion">Universidad Nacional de Educación</h2>
+                 <h4 class="preview-plataforma text-muted mb-2" id="previewNombrePlataforma">Sistema de Gestión Bibliotecaria</h4>
+                 <p class="preview-eslogan fst-italic" id="previewEslogan">Fomentando el amor por la lectura</p>
+                 <p class="preview-telefono mb-1" id="previewTelefono"><i class="bi bi-telephone me-2"></i><span>Teléfono no definido</span></p>
+                 <p class="preview-direccion text-muted small" id="previewDireccion"><i class="bi bi-geo-alt me-2"></i><span>Dirección no definida</span></p>
+                <div class="mt-4">
+                  <span class="badge preview-badge me-2" style="background-color: #003049;">Color Primario</span>
+                  <span class="badge preview-badge me-2" style="background-color: #023e8a;">Color Secundario</span>
+                  <span class="badge preview-badge" style="background-color: #669bbc;">Color de Acento</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
 
       <!-- Sección: Configuración de Cuenta -->
       <div class="row mb-4">
@@ -364,9 +396,8 @@
           </div>
         </div>
       </div>
-
-
 <div class="row mb-4">
+
 
            <!-- Sección: Configuración SMTP -->
 <div class="col-12 col-lg-6 mb-4">
@@ -405,7 +436,7 @@
           <label for="smtpContrasena" class="form-label fw-bold">
             <i class="bi bi-key me-2"></i>Contraseña de Aplicación
           </label>
-          <input type="password" class="form-control" id="smtpContrasena"
+          <input type="text" class="form-control" id="smtpContrasena"
                  placeholder="Contraseña de aplicación" required>
         </div>
 
@@ -427,6 +458,8 @@
         </button>
 
       </form>
+      <!-- Contenedor para mensajes del formulario SMTP (igual que los demás formularios) -->
+      <div id="mensajeSMTP" class="mt-3"></div>
     </div>
   </div>
 </div>
@@ -494,41 +527,76 @@
 
 
 
-    
-      <!-- Sección: Vista Previa -->
-      <div class="row">
-        <div class="col-12">
-          <div class="card shadow-sm">
-            <div class="card-header bg-success-gradient text-white">
-              <h5 class="mb-0">
-                <i class="bi bi-eye me-2"></i>Vista Previa de la Personalización
-              </h5>
+<!-- FORMULARIO DE BENEFICIOS -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-gift-fill me-2"></i>Gestión de Tipos de Beneficios
+                </h5>
             </div>
-            <div class="card-body text-center py-5">
-              <div class="preview-container">
-                <img src="/placeholder.svg?height=120&width=120" 
-                     alt="Logo preview" 
-                     class="preview-logo mb-3" 
-                     id="logoPreviewSmall">
-                 <h2 class="preview-nombre mb-2" id="previewNombreInstitucion">Universidad Nacional de Educación</h2>
-                 <h4 class="preview-plataforma text-muted mb-2" id="previewNombrePlataforma">Sistema de Gestión Bibliotecaria</h4>
-                 <p class="preview-eslogan fst-italic" id="previewEslogan">Fomentando el amor por la lectura</p>
-                 <p class="preview-telefono mb-1" id="previewTelefono"><i class="bi bi-telephone me-2"></i><span>Teléfono no definido</span></p>
-                 <p class="preview-direccion text-muted small" id="previewDireccion"><i class="bi bi-geo-alt me-2"></i><span>Dirección no definida</span></p>
-                <div class="mt-4">
-                  <span class="badge preview-badge me-2" style="background-color: #003049;">Color Primario</span>
-                  <span class="badge preview-badge me-2" style="background-color: #023e8a;">Color Secundario</span>
-                  <span class="badge preview-badge" style="background-color: #669bbc;">Color de Acento</span>
-                </div>
-              </div>
+            <div class="card-body">
+                <form id="formAgregarBeneficio">
+                    <div class="row">
+
+                        <div class="col-12 col-md-6 mb-3">
+                            <label for="nombreBeneficio" class="form-label fw-bold">
+                                <i class="bi bi-tag me-2"></i>Nombre del Beneficio
+                            </label>
+                            <input type="text" class="form-control" id="nombreBeneficio"
+                                   placeholder="Ej: Descuento en Librería, Préstamo Extendido" required>
+                            <small class="text-muted">Nombre que identifica el tipo de beneficio.</small>
+                        </div>
+
+                        <div class="col-12 col-md-6 mb-3">
+                            <label for="limiteBeneficio" class="form-label fw-bold">
+                                <i class="bi bi-clock-history me-2"></i>Tipo de Límite de Uso
+                            </label>
+                            <select class="form-select" id="limiteBeneficio" required>
+                                <option value="" disabled selected>Selecciona un tipo de límite</option>
+                                <option value="sin_limite">Sin Límite</option>
+                                <option value="diario">Diario</option>
+                                <option value="semanal">Semanal</option>
+                                <option value="mensual">Mensual</option>
+                            </select>
+                            <small class="text-muted">Frecuencia máxima de uso del beneficio.</small>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label for="descripcionBeneficio" class="form-label fw-bold">
+                                <i class="bi bi-card-text me-2"></i>Descripción del Beneficio
+                            </label>
+                            <textarea class="form-control" id="descripcionBeneficio" rows="3"
+                                      placeholder="Detalle en qué consiste este beneficio y sus condiciones." required></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-plus-circle-fill me-2"></i>Agregar Tipo de Beneficio
+                            </button>
+                            <button type="reset" class="btn btn-outline-danger ms-2">
+                                <i class="bi bi-x-circle me-2"></i>Limpiar Formulario
+                            </button>
+                        </div>
+
+                    </div>
+                </form>
+                <div id="mensajeBeneficio" class="mt-3"></div>
             </div>
-          </div>
         </div>
-      </div>
+    </div>
+</div>
+
+
+    
+     
 
     </div>
-
   </div>
+
+
+  
 
   <!-- Modal de mensaje -->
   <div class="modal fade" id="modalMensaje" tabindex="-1" aria-hidden="true">

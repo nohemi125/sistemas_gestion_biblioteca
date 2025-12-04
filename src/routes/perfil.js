@@ -55,4 +55,8 @@ router.post('/multa', guardarMulta);
 router.get('/personalizacion', require('../controllers/perfil').obtenerPersonalizacion);
 router.post('/personalizacion', require('../controllers/perfil').guardarPersonalizacion);
 
+// rutas de SMTP
+router.post('/smtp', require('../controllers/perfil').guardarSMTP);
+
+
 module.exports = router;
