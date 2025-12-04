@@ -3,11 +3,41 @@ const qrcode = require('qrcode');
 let client;
 let qrActual = null; // <-- Guardaremos el QR aquí
 let clientReadyPromise = null;
+let isReady = false;
+
+// Evitar que rechazos no manejados o excepciones uncaught cierren el proceso sin log
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception (to avoid crash):', err && err.stack ? err.stack : err);
+});
 
 async function iniciarWhatsApp() {
   if (client) return client;
+  // Configurar opciones de puppeteer para evitar problemas en sistemas donde
+  // Chromium no se inicia correctamente (sin sandbox en contenedores, etc.).
+  const puppeteerOpts = {
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--single-process'
+    ]
+  };
+
+  // Si el usuario proporcionó un ejecutable de Chromium via env, úsalo
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    puppeteerOpts.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+  }
+
   client = new Client({
-    authStrategy: new LocalAuth({ clientId: 'biblioteca' })
+    authStrategy: new LocalAuth({ clientId: 'biblioteca' }),
+    puppeteer: puppeteerOpts
   });
 
   // Promesa que se resolverá cuando el cliente emita 'ready'
@@ -30,12 +60,38 @@ async function iniciarWhatsApp() {
     qrActual = await qrcode.toDataURL(qr);
   });
 
+  client.on('auth_failure', (msg) => {
+    console.error('Auth failure (WhatsApp):', msg);
+    // limpiar qrActual para que el frontend pueda intentar regenerar
+    qrActual = null;
+    isReady = false;
+  });
+
+  client.on('disconnected', (reason) => {
+    console.warn('WhatsApp desconectado:', reason);
+    // Limpiar estado para permitir reconexión
+    client = null;
+    qrActual = null;
+    clientReadyPromise = null;
+    isReady = false;
+  });
+
+  client.on('error', (err) => {
+    console.error('WhatsApp client error:', err && err.message ? err.message : err);
+  });
+
   client.on('ready', () => {
     console.log("WhatsApp listo!");
     qrActual = null; // Ya no hace falta QR
+    isReady = true;
   });
 
-  client.initialize();
+  try {
+    client.initialize();
+  } catch (initErr) {
+    console.error('Error inicializando cliente WhatsApp:', initErr && initErr.message ? initErr.message : initErr);
+    // No arrojar para que el servidor siga funcionando; propagar error de forma controlada
+  }
   return client;
 }
 
@@ -126,3 +182,57 @@ async function enviarMensaje(numero, texto) {
 }
 
 module.exports = { iniciarWhatsApp, obtenerQR, enviarMensaje };
+
+// Desconectar / eliminar la sesión local para forzar regeneración de QR
+const fs = require('fs');
+const path = require('path');
+
+async function desconectarWhatsApp() {
+  try {
+    // intentar cerrar sesión si existe cliente
+    if (client) {
+      // Remover listeners para evitar que eventos internos intenten usar una
+      // conexión a Puppeteer que vamos a cerrar (evita ProtocolError en muchos casos)
+      try { client.removeAllListeners(); } catch (e) { /* ignorar */ }
+
+      try { await client.logout(); } catch (e) { console.warn('logout error (ignorado):', e && e.message ? e.message : e); }
+      try { await client.destroy(); } catch (e) { console.warn('destroy error (ignorado):', e && e.message ? e.message : e); }
+    }
+
+    client = null;
+    qrActual = null;
+    clientReadyPromise = null;
+    isReady = false;
+
+    // Borrar carpeta de LocalAuth para este clientId (si existe)
+    try {
+      const authBase = path.join(process.cwd(), '.wwebjs_auth');
+      const clientDir = path.join(authBase, 'biblioteca');
+      if (fs.existsSync(clientDir)) {
+        // Node 14+ usar rmSync recursivo; si no está disponible, usar rmdirSync
+        try {
+          fs.rmSync(clientDir, { recursive: true, force: true });
+        } catch (e) {
+          try { fs.rmdirSync(clientDir, { recursive: true }); } catch (err) { /* ignorar */ }
+        }
+      }
+    } catch (e) {
+      console.warn('No se pudo eliminar carpeta de sesión LocalAuth:', e && e.message);
+    }
+
+    // NOTA: No reiniciamos automáticamente el cliente aquí para evitar que
+    // se genere un QR inmediatamente tras desconexión. El frontend puede
+    // solicitar manualmente un nuevo QR si el operador pulsa "Generar QR".
+
+    return true;
+  } catch (err) {
+    console.error('Error en desconectarWhatsApp:', err);
+    throw err;
+  }
+}
+
+function estadoWhatsApp() {
+  return { connected: !!isReady, hasQR: !!qrActual };
+}
+
+module.exports = { iniciarWhatsApp, obtenerQR, enviarMensaje, desconectarWhatsApp, estadoWhatsApp };

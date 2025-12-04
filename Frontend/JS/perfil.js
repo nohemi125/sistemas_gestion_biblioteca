@@ -1,27 +1,111 @@
 
 // Función reutilizable para mostrar mensajes en modal
 function showModalMessage(title, message, type = 'primary') {
-  const modalEl = document.getElementById('modalMensaje');
-  const header = document.getElementById('modalMensajeHeader');
-  const titleEl = document.getElementById('modalMensajeTitulo');
-  const bodyEl = document.getElementById('modalMensajeBody');
+  // Mostrar mensaje inline dentro de #mensajeBeneficio (si existe)
+  const cont = document.getElementById('mensajeBeneficio');
+  const status = document.getElementById('qrStatus');
+  const cls = (type === 'success') ? 'success' : (type === 'danger') ? 'danger' : 'primary';
+  const icon = (type === 'success') ? 'bi-check-circle' : (type === 'danger') ? 'bi-exclamation-circle' : 'bi-info-circle';
+  const html = ` <div class="alert alert-${cls}"><i class="bi ${icon} me-2"></i><strong>${title}</strong> - ${message}</div>`;
 
-  if (!modalEl) {
-    // Si el modal no existe, caer de vuelta a alert
-    alert(title + " - " + message);
+  if (cont) {
+    cont.innerHTML = html;
+    // limpiar automáticamente después de 6s
+    setTimeout(() => { try { cont.innerHTML = ''; } catch(e){} }, 6000);
+    return;
+  }
+  if (status) {
+    status.innerHTML = html;
+    setTimeout(() => { try { status.innerHTML = ''; } catch(e){} }, 6000);
+    // also show a toast for better visibility
+    tryShowToast(title, message, type);
     return;
   }
 
-  header.classList.remove('bg-success', 'bg-danger', 'bg-primary', 'text-white');
-  if (type === 'success') header.classList.add('bg-success', 'text-white');
-  else if (type === 'danger') header.classList.add('bg-danger', 'text-white');
-  else header.classList.add('bg-primary', 'text-white');
+  // Si no existen contenedores inline, mostrar toast si es posible
+  tryShowToast(title, message, type) || alert(title + " - " + message);
+}
 
-  if (titleEl) titleEl.textContent = title || '';
-  if (bodyEl) bodyEl.textContent = message || '';
+// Crear y mostrar un toast Bootstrap (devuelve true si se mostró uno)
+function tryShowToast(title, message, type = 'primary') {
+  try {
+    const container = document.getElementById('toastContainer');
+    if (!container || !window.bootstrap || !window.bootstrap.Toast) return false;
+    const cls = (type === 'success') ? 'bg-success text-white' : (type === 'danger') ? 'bg-danger text-white' : 'bg-primary text-white';
 
-  const bsModal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
-  bsModal.show();
+    const toastId = 'toast_' + Date.now();
+    const toastEl = document.createElement('div');
+    toastEl.className = 'toast ';
+    toastEl.id = toastId;
+    toastEl.role = 'status';
+    toastEl.ariaLive = 'polite';
+    toastEl.ariaAtomic = 'true';
+    toastEl.innerHTML = `
+      <div class="toast-header ${cls}">
+        <strong class="me-auto">${title}</strong>
+        <small class="text-muted">ahora</small>
+        <button type="button" class="btn-close btn-close-white ms-2 mb-1" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+      </div>
+      <div class="toast-body">
+        ${message}
+      </div>`;
+
+    container.appendChild(toastEl);
+    const bsToast = new window.bootstrap.Toast(toastEl, { delay: 6000 });
+    bsToast.show();
+
+    // limpiar el DOM cuando termine
+    toastEl.addEventListener('hidden.bs.toast', () => { try { container.removeChild(toastEl); } catch (e) {} });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Función para mostrar un modal de confirmación que devuelve una Promise<boolean>
+function showConfirm(title, message, okText = 'Aceptar', cancelText = 'Cancelar', type = 'primary') {
+  return new Promise((resolve) => {
+    const modalEl = document.getElementById('modalConfirm');
+    const header = document.getElementById('modalConfirmHeader');
+    const titleEl = document.getElementById('modalConfirmTitulo');
+    const bodyEl = document.getElementById('modalConfirmBody');
+    const okBtn = document.getElementById('modalConfirmOk');
+    const cancelBtn = document.getElementById('modalConfirmCancel');
+
+    if (!modalEl || !okBtn || !cancelBtn) {
+      // Fallback a confirm() si no existe el modal en el DOM
+      try { resolve(confirm(message)); } catch (e) { resolve(false); }
+      return;
+    }
+
+    header.classList.remove('bg-success', 'bg-danger', 'bg-primary', 'text-white');
+    if (type === 'success') header.classList.add('bg-success', 'text-white');
+    else if (type === 'danger') header.classList.add('bg-danger', 'text-white');
+    else header.classList.add('bg-primary', 'text-white');
+
+    if (titleEl) titleEl.textContent = title || '';
+    if (bodyEl) bodyEl.textContent = message || '';
+    okBtn.textContent = okText || 'Aceptar';
+    cancelBtn.textContent = cancelText || 'Cancelar';
+
+    const bsModal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+
+    const cleanup = () => {
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      modalEl.removeEventListener('hidden.bs.modal', onHidden);
+    };
+
+    const onOk = () => { cleanup(); bsModal.hide(); resolve(true); };
+    const onCancel = () => { cleanup(); bsModal.hide(); resolve(false); };
+    const onHidden = () => { cleanup(); resolve(false); };
+
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    modalEl.addEventListener('hidden.bs.modal', onHidden);
+
+    bsModal.show();
+  });
 }
 
 
@@ -509,11 +593,50 @@ if (formContrasena) {
   });
 }
 
-// Ejecutar al cargar la página
-cargarVistaPrevia();
-cargarUsuario();
-// Cargar personalización (nombrePlataforma, eslogan, colores) para que persista tras recargar
-cargarPersonalizacionEnPreview();
+// Ejecutar inicializaciones cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('Perfil: DOMContentLoaded - iniciando cargas iniciales');
+  cargarVistaPrevia();
+  cargarUsuario();
+  // Cargar personalización (nombrePlataforma, eslogan, colores) para que persista tras recargar
+  cargarPersonalizacionEnPreview();
+  // Cargar estado WhatsApp
+  cargarEstadoWhatsApp();
+});
+
+// Actualizar badge de estado de WhatsApp
+async function cargarEstadoWhatsApp() {
+  console.log('Perfil: cargando estado WhatsApp...');
+  try {
+    const res = await fetch('/api/wpp/status');
+    const json = await res.json();
+    console.log('Perfil: estado WhatsApp response', json);
+    if (json && json.ok && json.data) {
+      updateWhatsAppBadge(!!json.data.connected);
+    }
+  } catch (e) {
+    console.warn('No se pudo cargar estado WhatsApp:', e);
+  }
+}
+
+function updateWhatsAppBadge(connected) {
+  const badge = document.getElementById('whatsappBadge');
+  const qrStatus = document.getElementById('qrStatus');
+  if (!badge) return;
+  if (connected) {
+    badge.classList.remove('bg-secondary');
+    badge.classList.add('bg-success');
+    badge.textContent = 'Conectado';
+    if (qrStatus) qrStatus.innerHTML = `<div class="alert alert-success mb-0"><i class="bi bi-check-circle me-2"></i>WhatsApp está conectado.</div>`;
+  } else {
+    badge.classList.remove('bg-success');
+    badge.classList.add('bg-secondary');
+    badge.textContent = 'Desconectado';
+    if (qrStatus) qrStatus.innerHTML = '';
+  }
+}
+
+cargarEstadoWhatsApp();
 
 
 
@@ -687,14 +810,92 @@ formSMTP.addEventListener("submit", async (e) => {
 
 // FUNCION PARA MOSTRRAR EL CODIGO QR DE WHATSAPP
 async function mostrarQR() {
-  const res = await fetch("/api/wpp/qr");
-  const data = await res.json();
+  const btn = document.getElementById('btnGenerarQR');
+  const loading = document.getElementById('qrLoading');
+  const qrContainer = document.getElementById('qrContainer');
+  const qrImageWrap = document.getElementById('qrImageWrap');
+  try {
+    if (btn) btn.disabled = true;
+    // mostrar contenedor y spinner en el lugar donde irá el QR
+    if (qrContainer) qrContainer.style.display = 'block';
+    if (qrImageWrap) qrImageWrap.style.display = 'none';
+    if (loading) { loading.classList.remove('d-none'); loading.setAttribute('aria-hidden', 'false'); }
 
-  if (data.ok) {
-    document.getElementById("qrImage").src = data.qr;
-    document.getElementById("qrContainer").style.display = "block";
-  } else {
-    alert(data.message);
+    const res = await fetch("/api/wpp/qr");
+    const data = await res.json();
+    console.log('Perfil: respuesta /api/wpp/qr', data);
+
+    const img = document.getElementById("qrImage");
+    const mensajeBenef = document.getElementById('mensajeBeneficio');
+    const qrStatus = document.getElementById('qrStatus');
+
+    // Clear previous status messages
+    if (mensajeBenef) mensajeBenef.innerHTML = '';
+    if (qrStatus) qrStatus.innerHTML = '';
+
+    if (data && (data.ok || data.qr)) {
+      if (img) img.src = data.qr || data.qr;
+      // Al generar un QR estamos en proceso de autenticación (no conectado todavía)
+      try { updateWhatsAppBadge(false); } catch(e){}
+      if (loading) { loading.classList.add('d-none'); loading.setAttribute('aria-hidden', 'true'); }
+      if (qrImageWrap) qrImageWrap.style.display = 'block';
+    } else {
+      // If backend indicates the service is already connected, show message in both places
+      const connected = data && (data.connected === true || /conectad/i.test(String(data.message || '')));
+      if (connected) {
+        const html = `<div class="alert alert-success mb-0"><i class="bi bi-check-circle me-2"></i>WhatsApp ya está vinculado a una cuenta.</div>`;
+        if (mensajeBenef) mensajeBenef.innerHTML = html;
+        if (qrStatus) qrStatus.innerHTML = html;
+        if (loading) { loading.classList.add('d-none'); loading.setAttribute('aria-hidden', 'true'); }
+        if (qrContainer) qrContainer.style.display = 'none';
+        try { updateWhatsAppBadge(true); } catch(e){}
+      } else {
+        // ocultar contenedor si no hay QR
+        if (loading) { loading.classList.add('d-none'); loading.setAttribute('aria-hidden', 'true'); }
+        if (qrContainer) qrContainer.style.display = 'none';
+        // show both modal and inline status for clarity
+        const errMsg = data && data.message ? data.message : 'No se pudo obtener el QR';
+        if (qrStatus) qrStatus.innerHTML = `<div class="alert alert-danger mb-0"><i class="bi bi-exclamation-circle me-2"></i>${errMsg}</div>`;
+        showModalMessage('Error', errMsg, 'danger');
+      }
+    }
+  } catch (err) {
+    console.error('mostrarQR error:', err);
+    showModalMessage('Error', 'Error al generar el QR. Revisa la consola del servidor.', 'danger');
+  } finally {
+    if (btn) btn.disabled = false;
+    if (loading) { loading.classList.add('d-none'); loading.setAttribute('aria-hidden', 'true'); }
+  }
+}
+
+
+// Desconectar la sesión de WhatsApp en el servidor y solicitar nuevo QR
+async function desconectarWhatsApp() {
+  try {
+    // Usar modal de confirmación en lugar de confirm()
+    const confirmed = await showConfirm('Confirmar desconexión', '¿Deseas desconectar WhatsApp?', 'Desconectar', 'Cancelar', 'danger');
+    if (!confirmed) return;
+
+    const resp = await fetch('/api/wpp/disconnect', { method: 'POST' });
+    const json = await resp.json();
+    if (resp.ok && json.ok) {
+      showModalMessage('Éxito', json.mensaje || 'Desconectado correctamente.', 'success');
+      // No generar QR automáticamente: ocultar cualquier QR mostrado previamente
+      try {
+        const qrContainer = document.getElementById('qrContainer');
+        const qrImage = document.getElementById('qrImage');
+        const mensajeBenef = document.getElementById('mensajeBeneficio');
+        if (qrContainer) qrContainer.style.display = 'none';
+        if (qrImage) qrImage.src = '';
+        if (mensajeBenef) mensajeBenef.innerHTML = '';
+        try { updateWhatsAppBadge(false); } catch(e){}
+      } catch (e) { /* no bloquear por error al limpiar UI */ }
+    } else {
+      showModalMessage('Error', (json && json.mensaje) || 'Error al desconectar WhatsApp', 'danger');
+    }
+  } catch (err) {
+    console.error('Error desconectando WhatsApp:', err);
+    showModalMessage('Error', 'Error al desconectar WhatsApp. Revisa la consola del servidor.', 'danger');
   }
 }
 

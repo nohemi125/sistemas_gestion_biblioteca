@@ -55,11 +55,12 @@ const enviarRecordatorio = async (req, res) => {
 
 		// Delegar envío (según opción 'via')
 		const mensaje = req.body.mensaje || req.body.mensage || null;
-		await notifications.enviarRecordatorio(prestamo, miembro, { via: viaNorm, canales, mensaje });
+		const resultados = await notifications.enviarRecordatorio(prestamo, miembro, { via: viaNorm, canales, mensaje });
 		res.json({
 			mensaje: 'Recordatorio procesado',
 			destinatario: miembro.email,
 			solicitado: viaNorm || canales,
+			resultados
 		});
 	} catch (error) {
 		console.error('Error al enviar recordatorio:', error);
@@ -147,7 +148,7 @@ const enviarMulta = async (req, res) => {
 
 		// Delegar envío (según opción 'via')
 		const mensaje = req.body.mensaje || req.body.mensage || null;
-		await notifications.enviarMulta(prestamo, miembro, montoFinal, { via: viaNorm, canales, mensaje });
+		const resultados = await notifications.enviarMulta(prestamo, miembro, montoFinal, { via: viaNorm, canales, mensaje });
 		res.json({
 			mensaje: 'Notificación de multa procesada',
 			destinatario: miembro.email,
@@ -156,6 +157,7 @@ const enviarMulta = async (req, res) => {
 			dias_sobre_tolerancia: diasSobreTolerancia,
 			dias_tolerancia: diasTolerancia,
 			solicitado: viaNorm || canales,
+			resultados
 		});
 	} catch (error) {
 		console.error('Error al enviar notificación de multa:', error);

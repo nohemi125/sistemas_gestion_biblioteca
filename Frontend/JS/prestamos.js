@@ -828,7 +828,12 @@ document.addEventListener("DOMContentLoaded", () => {
           if (via === 'email') mostrarToast(`Recordatorio enviado por Email a ${data.destinatario}`, 'success')
           else if (via === 'whatsapp') mostrarToast(`Recordatorio enviado por WhatsApp (si aplica)`, 'success')
           else mostrarToast(`Recordatorio enviado (Email + WhatsApp si aplica) a ${data.destinatario}`, 'success')
-          
+
+          // Si el backend informa que WhatsApp no se envió por falta de conexión, avisar al usuario
+          if (data.resultados && data.resultados.whatsapp === 'no_conectado') {
+            mostrarToast('Aviso: WhatsApp no conectado. Mensaje no enviado por WhatsApp.', 'warning')
+          }
+
           // Cerrar modal
           const modal = bootstrap.Modal.getInstance(document.getElementById("modalRecordatorio"))
           modal.hide()
@@ -892,7 +897,11 @@ document.addEventListener("DOMContentLoaded", () => {
           if (viaM === 'email') mostrarToast(`Multa de $${data.monto.toFixed(2)} enviada por Email a ${data.destinatario}`, 'success')
           else if (viaM === 'whatsapp') mostrarToast(`Multa solicitada por WhatsApp (si aplica)`, 'success')
           else mostrarToast(`Multa enviada (Email + WhatsApp si aplica) a ${data.destinatario}`, 'success')
-          
+
+          if (data.resultados && data.resultados.whatsapp === 'no_conectado') {
+            mostrarToast('Aviso: WhatsApp no conectado. Mensaje no enviado por WhatsApp.', 'warning')
+          }
+
           // Cerrar modal
           const modal = bootstrap.Modal.getInstance(document.getElementById("modalMulta"))
           modal.hide()

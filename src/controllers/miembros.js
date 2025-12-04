@@ -147,8 +147,14 @@ const enviarNotificacionMiembro = async (req, res) => {
         resultados.whatsapp = 'faltan_datos';
       } else {
         try {
-          await whatsapp.enviarMensaje(miembro.celular, mensaje);
-          resultados.whatsapp = 'enviado';
+          // Verificar estado del servicio WhatsApp antes de enviar
+          const estado = (typeof whatsapp.estadoWhatsApp === 'function') ? whatsapp.estadoWhatsApp() : null;
+          if (!estado || !estado.connected) {
+            resultados.whatsapp = 'no_conectado';
+          } else {
+            await whatsapp.enviarMensaje(miembro.celular, mensaje);
+            resultados.whatsapp = 'enviado';
+          }
         } catch (err) {
           console.error('Error al enviar WhatsApp en notificación manual:', err);
           resultados.whatsapp = 'error';

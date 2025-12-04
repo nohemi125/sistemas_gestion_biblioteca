@@ -35,33 +35,60 @@ async function enviarRecordatorio(prestamo, miembro, options = {}) {
     }
   }
 
+  // Resultados por canal (se devolverá al controlador)
+  const resultados = { email: null, whatsapp: null };
+
   // Email (si fue solicitado)
   if (via === 'both' || via === 'email') {
     if (miembro.email) {
-      await enviarCorreo({
-        destinatario: miembro.email,
-        asunto: '📚 Recordatorio de Devolución de Libro',
-        mensaje: customMensaje ? customMensaje : `Hola ${prestamo.nombre_miembro}, te recordamos que debes devolver "${prestamo.titulo_libro}" el ${fechaDevolucion}.`,
-        html: customMensaje ? `<p>${customMensaje}</p>` : html
-      });
-      console.log('Recordatorio: email enviado a', miembro.email);
+      try {
+        await enviarCorreo({
+          destinatario: miembro.email,
+          asunto: '📚 Recordatorio de Devolución de Libro',
+          mensaje: customMensaje ? customMensaje : `Hola ${prestamo.nombre_miembro}, te recordamos que debes devolver "${prestamo.titulo_libro}" el ${fechaDevolucion}.`,
+          html: customMensaje ? `<p>${customMensaje}</p>` : html
+        });
+        console.log('Recordatorio: email enviado a', miembro.email);
+        resultados.email = 'enviado';
+      } catch (err) {
+        console.error('Recordatorio: error enviando email a', miembro.email, err);
+        resultados.email = 'error';
+      }
     } else {
       console.log('Recordatorio: email no enviado, miembro sin email');
+      resultados.email = 'no_email';
     }
+  } else {
+    resultados.email = 'no_solicitado';
   }
 
-  // WhatsApp (si fue solicitado)
+  // WhatsApp (si fue solicitado) — solo enviar si el servicio está conectado
   if (via === 'both' || via === 'whatsapp') {
     if (miembro.celular) {
-      const textoWpp = customMensaje ? customMensaje : await formatWhatsAppRecordatorio(prestamo, fechaDevolucion);
-      whatsapp.enviarMensaje(miembro.celular, textoWpp)
-        .then(() => console.log('WhatsApp enviado a', miembro.celular))
-        .catch(err => console.error('Error al enviar WhatsApp a', miembro.celular, err));
+      const estado = (typeof whatsapp.estadoWhatsApp === 'function') ? whatsapp.estadoWhatsApp() : null;
+      if (!estado || !estado.connected) {
+        console.log('Recordatorio: WhatsApp no enviado, servicio WhatsApp no conectado');
+        resultados.whatsapp = 'no_conectado';
+      } else {
+        try {
+          const textoWpp = customMensaje ? customMensaje : await formatWhatsAppRecordatorio(prestamo, fechaDevolucion);
+          await whatsapp.enviarMensaje(miembro.celular, textoWpp);
+          console.log('WhatsApp enviado a', miembro.celular);
+          resultados.whatsapp = 'enviado';
+        } catch (err) {
+          console.error('Error al enviar WhatsApp a', miembro.celular, err);
+          resultados.whatsapp = 'error';
+        }
+      }
     } else {
       console.log('Recordatorio: WhatsApp no enviado, miembro sin celular');
+      resultados.whatsapp = 'no_celular';
     }
+  } else {
+    resultados.whatsapp = 'no_solicitado';
   }
- 
+
+  return resultados;
 }
 async function enviarMulta(prestamo, miembro, monto_multa, options = {}) {
   const fechaDevolucion = new Date(prestamo.fecha_devolucion);
@@ -94,32 +121,60 @@ async function enviarMulta(prestamo, miembro, monto_multa, options = {}) {
     }
   }
 
+  // Resultados por canal
+  const resultados = { email: null, whatsapp: null };
+
   // Email
   if (via === 'both' || via === 'email') {
     if (miembro.email) {
-      await enviarCorreo({
-        destinatario: miembro.email,
-        asunto: '⚠️ Aviso de Multa por Retraso - Biblioteca',
-        mensaje: customMensaje ? customMensaje : `Estimado/a ${prestamo.nombre_miembro}, tienes ${diasRetraso} días de retraso en la devolución de "${prestamo.titulo_libro}". Se ha generado una multa de $${parseFloat(monto_multa).toFixed(2)}.`,
-        html: customMensaje ? `<p>${customMensaje}</p>` : html
-      });
-      console.log('Multa: email enviado a', miembro.email);
+      try {
+        await enviarCorreo({
+          destinatario: miembro.email,
+          asunto: '⚠️ Aviso de Multa por Retraso - Biblioteca',
+          mensaje: customMensaje ? customMensaje : `Estimado/a ${prestamo.nombre_miembro}, tienes ${diasRetraso} días de retraso en la devolución de "${prestamo.titulo_libro}". Se ha generado una multa de $${parseFloat(monto_multa).toFixed(2)}.`,
+          html: customMensaje ? `<p>${customMensaje}</p>` : html
+        });
+        console.log('Multa: email enviado a', miembro.email);
+        resultados.email = 'enviado';
+      } catch (err) {
+        console.error('Multa: error enviando email a', miembro.email, err);
+        resultados.email = 'error';
+      }
     } else {
       console.log('Multa: email no enviado, miembro sin email');
+      resultados.email = 'no_email';
     }
+  } else {
+    resultados.email = 'no_solicitado';
   }
 
   // WhatsApp
   if (via === 'both' || via === 'whatsapp') {
     if (miembro.celular) {
-      const textoWpp = customMensaje ? customMensaje : await formatWhatsAppMulta(prestamo, diasRetraso, monto_multa);
-      whatsapp.enviarMensaje(miembro.celular, textoWpp)
-        .then(() => console.log('WhatsApp (multa) enviado a', miembro.celular))
-        .catch(err => console.error('Error al enviar WhatsApp (multa) a', miembro.celular, err));
+      const estado = (typeof whatsapp.estadoWhatsApp === 'function') ? whatsapp.estadoWhatsApp() : null;
+      if (!estado || !estado.connected) {
+        console.log('Multa: WhatsApp no enviado, servicio WhatsApp no conectado');
+        resultados.whatsapp = 'no_conectado';
+      } else {
+        try {
+          const textoWpp = customMensaje ? customMensaje : await formatWhatsAppMulta(prestamo, diasRetraso, monto_multa);
+          await whatsapp.enviarMensaje(miembro.celular, textoWpp);
+          console.log('WhatsApp (multa) enviado a', miembro.celular);
+          resultados.whatsapp = 'enviado';
+        } catch (err) {
+          console.error('Error al enviar WhatsApp (multa) a', miembro.celular, err);
+          resultados.whatsapp = 'error';
+        }
+      }
     } else {
       console.log('Multa: WhatsApp no enviado, miembro sin celular');
+      resultados.whatsapp = 'no_celular';
     }
+  } else {
+    resultados.whatsapp = 'no_solicitado';
   }
+
+  return resultados;
 }
 
 // Helpers para formatear mensajes de WhatsApp
