@@ -1,6 +1,7 @@
 const Prestamo = require('../models/prestamos');
 const Miembro = require('../models/miembros');
 const Libro = require('../models/libros');
+const db = require('../config/db');
 
 //  Obtener todos los préstamos (con nombres de miembro y título de libro)
 const obtenerPrestamos = async (req, res) => {
@@ -117,6 +118,56 @@ const actualizarPrestamo = async (req, res) => {
 			} catch (err) {
 				console.error('Error al actualizar stock del libro tras devolución:', err);
 			}
+
+				// Guardar multa (si la hay) en la tabla `multas`
+				const multaMonto = Number(datos.multa) || 0;
+				const multaPagada = datos.multa_pagada === true || datos.multa_pagada === 'true' || datos.multa_pagada === 1 || datos.multa_pagada === '1';
+				if (multaMonto > 0) {
+					try {
+						const hoy = new Date();
+						const fechaVenc = prestamo.fecha_devolucion ? new Date(prestamo.fecha_devolucion) : hoy;
+						const msPorDia = 24 * 60 * 60 * 1000;
+						const diasRetraso = Math.max(0, Math.floor((Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()) - Date.UTC(fechaVenc.getFullYear(), fechaVenc.getMonth(), fechaVenc.getDate())) / msPorDia));
+
+						const [exist] = await db.query('SELECT * FROM multas WHERE id_prestamo = ? LIMIT 1', [id]);
+						if (exist && exist.length > 0) {
+							const m = exist[0];
+							if (multaPagada) {
+								try {
+									await db.query(
+										'UPDATE multas SET dias_retraso = ?, monto = 0, pagado = 1, monto_pagado = ?, fecha_pago = CURRENT_TIMESTAMP, fecha_registro = CURRENT_TIMESTAMP WHERE id_multas = ?',
+										[diasRetraso, multaMonto, m.id_multas]
+									);
+								} catch (err) {
+									await db.query('UPDATE multas SET dias_retraso = ?, monto = 0, pagado = 1, fecha_registro = CURRENT_TIMESTAMP WHERE id_multas = ?', [diasRetraso, m.id_multas]);
+								}
+							} else {
+								await db.query('UPDATE multas SET dias_retraso = ?, monto = ?, pagado = 0, fecha_registro = CURRENT_TIMESTAMP WHERE id_multas = ?', [diasRetraso, multaMonto, m.id_multas]);
+							}
+						} else {
+							if (multaPagada) {
+								try {
+									await db.query(
+										'INSERT INTO multas (id_prestamo, id_miembro, dias_retraso, monto, pagado, monto_pagado, fecha_registro, fecha_pago) VALUES (?, ?, ?, ?, 1, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
+										[id, prestamo.id_miembro, diasRetraso, 0, multaMonto]
+									);
+								} catch (err) {
+									await db.query(
+										'INSERT INTO multas (id_prestamo, id_miembro, dias_retraso, monto, pagado, fecha_registro) VALUES (?, ?, ?, ?, 1, CURRENT_TIMESTAMP)',
+										[id, prestamo.id_miembro, diasRetraso, multaMonto]
+									);
+								}
+							} else {
+								await db.query(
+									'INSERT INTO multas (id_prestamo, id_miembro, dias_retraso, monto, pagado, fecha_registro) VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP)',
+									[id, prestamo.id_miembro, diasRetraso, multaMonto]
+								);
+							}
+						}
+					} catch (err) {
+						console.error('Error al registrar multa para devolución:', err);
+					}
+				}
 
 			return res.json({ mensaje: 'Préstamo (devolución) registrado correctamente' });
 		}

@@ -444,21 +444,130 @@ document.addEventListener("DOMContentLoaded", () => {
       const id = btn.dataset.id
       const miembro = btn.dataset.miembro
       const libro = btn.dataset.libro
+      console.debug('Abrir modal Devolucion -> id:', id, 'miembro:', miembro, 'libro:', libro)
 
-      document.querySelector("#modalDevolucion .alert-info").innerHTML = `
-        <strong>Préstamo:</strong> #P${String(id).padStart(3, "0")}<br>
-        <strong>Miembro:</strong> ${miembro}<br>
-        <strong>Libro:</strong> ${libro}
-      `
+      // Cargar detalles del préstamo para calcular multa si aplica
+      try {
+        const resp = await fetch(`/api/prestamos/${id}`, { credentials: 'include' })
+        console.debug('Fetch /api/prestamos status', resp.status)
+        let prestamo = null
+        if (resp.ok) {
+          try { prestamo = await resp.json() } catch(parseErr) { console.warn('No se pudo parsear JSON del préstamo:', parseErr) }
+        } else {
+          console.warn('No se pudo obtener detalles del préstamo, status:', resp.status)
+        }
 
-      // Establecer fecha actual como fecha de devolución
-      const fechaHoy = new Date().toISOString().split('T')[0]
-      document.getElementById("fechaDevolucionReal").value = fechaHoy
+        // Asegurar que exista el contenedor .alert-info en el modal; si no, crear uno
+        let alertInfoEl = document.querySelector("#modalDevolucion .alert-info")
+        if (!alertInfoEl) {
+          const modalBody = document.querySelector('#modalDevolucion .modal-body')
+          if (modalBody) {
+            alertInfoEl = document.createElement('div')
+            alertInfoEl.className = 'alert alert-info'
+            modalBody.insertBefore(alertInfoEl, modalBody.firstChild)
+          }
+        }
 
-      document.getElementById("formDevolucion").dataset.prestamoId = id
+        const miembroDisplay = escapeHtml((prestamo && prestamo.nombre_miembro) || miembro || '')
+        const libroDisplay = escapeHtml((prestamo && prestamo.titulo_libro) || libro || '')
+        if (alertInfoEl) {
+          alertInfoEl.innerHTML = `\n          <strong>Préstamo:</strong> #P${String(id).padStart(3, "0")}<br>\n          <strong>Miembro:</strong> ${miembroDisplay}<br>\n          <strong>Libro:</strong> ${libroDisplay}\n        `
+        }
 
-      const modal = new bootstrap.Modal(document.getElementById("modalDevolucion"))
-      modal.show()
+        // Establecer fecha actual como fecha de devolución por defecto
+        const fechaHoy = new Date().toISOString().split('T')[0]
+        const fechaInput = document.getElementById("fechaDevolucionReal")
+        if (fechaInput) fechaInput.value = fechaHoy
+
+        // Calcular días de retraso (si la fecha real es posterior a la fecha de devolución esperada)
+        let montoMulta = 0
+        try {
+          const fechaDevolucionEsperada = prestamo.fecha_devolucion ? new Date(prestamo.fecha_devolucion) : null
+          const fechaReal = new Date(fechaHoy)
+          let diasRetraso = 0
+          if (fechaDevolucionEsperada) {
+            const diffMs = fechaReal.setHours(0,0,0,0) - fechaDevolucionEsperada.setHours(0,0,0,0)
+            diasRetraso = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+          }
+          // Fallback: si no pudimos calcular, usar los días del botón (data-dias) cuando el préstamo está vencido
+          if (!Number.isFinite(diasRetraso) || diasRetraso === 0) {
+            const diasBtn = Number.parseInt(btn.dataset.dias || btn.dataset.dia || 0)
+            if (Number.isFinite(diasBtn) && diasBtn > 0) diasRetraso = diasBtn
+          }
+
+          // Obtener configuración de multa (valor por día y días de tolerancia)
+          let valorPorDia = 1.0
+          let diasTolerancia = 0
+          try {
+            const cfgResp = await fetch('/api/perfil/multa', { credentials: 'include' })
+            if (cfgResp.ok) {
+              const cfgJson = await cfgResp.json()
+              if (cfgJson && cfgJson.ok && cfgJson.data) {
+                valorPorDia = parseFloat(cfgJson.data.valor_multa) || valorPorDia
+                diasTolerancia = parseInt(cfgJson.data.dias_tolerancia) || diasTolerancia
+              }
+            }
+          } catch (cfgErr) {
+            console.warn('No se pudo cargar configuración de multa, usando valores por defecto', cfgErr)
+          }
+
+          const esVencidoFlag = (prestamo && prestamo.estado === 'Vencido') || (btn && btn.dataset && Number.parseInt(btn.dataset.dias || 0) > 0)
+
+          const diasACobrarBase = Math.max(0, (Number.isFinite(diasRetraso) ? diasRetraso : 0) - (Number.isFinite(diasTolerancia) ? diasTolerancia : 0))
+          let diasACobrar = diasACobrarBase
+          montoMulta = +(diasACobrar * (Number.isFinite(valorPorDia) ? valorPorDia : 1.0))
+
+          // Si sigue en cero pero el préstamo está vencido, forzar a mostrar con base en data-dias o al menos 1 día
+          if ((montoMulta <= 0 || !Number.isFinite(montoMulta)) && esVencidoFlag) {
+            const diasBtn = Number.parseInt(btn.dataset.dias || 1)
+            diasACobrar = Math.max(1, diasBtn)
+            montoMulta = +(diasACobrar * (Number.isFinite(valorPorDia) ? valorPorDia : 1.0))
+          }
+
+          console.debug('Cálculo multa -> diasRetraso:', diasRetraso, 'diasTolerancia:', diasTolerancia, 'valorPorDia:', valorPorDia, 'diasACobrar:', diasACobrar, 'montoMulta:', montoMulta, 'esVencidoFlag:', esVencidoFlag)
+        } catch (e) {
+          console.warn('Error calculando multa en cliente:', e)
+          montoMulta = 0
+        }
+
+        // Mostrar monto de multa y checkbox si aplica
+        try {
+          const multaRow = document.getElementById('multaRow')
+          const montoEl = document.getElementById('montoMultaDevolucion')
+          const multaPagadaEl = document.getElementById('multaPagada')
+          if (montoEl) montoEl.value = (Number.isFinite(montoMulta) ? montoMulta : 0).toFixed(2)
+          // Mostrar siempre para vencidos, aunque el cálculo sea 0 (dejamos visible con 0.00)
+          const esVencido = (prestamo && prestamo.estado === 'Vencido') || (btn && btn.dataset && Number.parseInt(btn.dataset.dias || 0) > 0)
+          if (multaRow) multaRow.style.display = (montoMulta >= 0 || esVencido) ? 'block' : 'none'
+          if (multaPagadaEl) multaPagadaEl.checked = false
+        } catch (e) { /* noop */ }
+
+        document.getElementById("formDevolucion").dataset.prestamoId = id
+
+        const modal = new bootstrap.Modal(document.getElementById("modalDevolucion"))
+        modal.show()
+      } catch (err) {
+        console.error('Error al cargar datos del préstamo para devolución:', err)
+        // Fallback: mostrar modal con los datos mínimos disponibles (crear contenedor si falta)
+        let alertElFallback = document.querySelector('#modalDevolucion .alert-info')
+        if (!alertElFallback) {
+          const modalBody = document.querySelector('#modalDevolucion .modal-body')
+          if (modalBody) {
+            alertElFallback = document.createElement('div')
+            alertElFallback.className = 'alert alert-info'
+            modalBody.insertBefore(alertElFallback, modalBody.firstChild)
+          }
+        }
+        if (alertElFallback) {
+          alertElFallback.innerHTML = `\n          <strong>Préstamo:</strong> #P${String(id).padStart(3, "0")}<br>\n          <strong>Miembro:</strong> ${escapeHtml(miembro)}<br>\n          <strong>Libro:</strong> ${escapeHtml(libro)}\n        `
+        }
+        const fechaHoy = new Date().toISOString().split('T')[0]
+        const fechaInput = document.getElementById("fechaDevolucionReal")
+        if (fechaInput) fechaInput.value = fechaHoy
+        document.getElementById("formDevolucion").dataset.prestamoId = id
+        const modal = new bootstrap.Modal(document.getElementById("modalDevolucion"))
+        modal.show()
+      }
     }
 
     // Enviar recordatorio
@@ -748,12 +857,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const fechaDevolucionReal = document.getElementById("fechaDevolucionReal").value
 
+      // Leer multa y si fue pagada desde el modal (si existen los campos)
+      const montoMulta = document.getElementById('montoMultaDevolucion') ? parseFloat(document.getElementById('montoMultaDevolucion').value) || 0 : 0
+      const multaPagada = document.getElementById('multaPagada') ? !!document.getElementById('multaPagada').checked : false
+
       const datosDevolucion = {
         estado: "Devuelto",
         fecha_devolucion: fechaDevolucionReal, // Actualizar la fecha de devolución a la fecha real
         fecha_devolucion_real: fechaDevolucionReal,
         estado_libro: document.getElementById("estadoLibro").value,
-        notas: document.getElementById("notasDevolucion").value
+        notas: document.getElementById("notasDevolucion").value,
+        multa: montoMulta,
+        multa_pagada: multaPagada
       }
 
       try {

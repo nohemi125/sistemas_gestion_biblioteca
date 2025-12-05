@@ -289,6 +289,19 @@
               <label class="form-label">Fecha de Devolucion Real</label>
               <input type="date" class="form-control" id="fechaDevolucionReal" required>
             </div>
+            <!-- Multa calculada (se muestra solo si hay multa) -->
+            <div class="mb-3" id="multaRow" style="display:none;">
+              <label class="form-label">Multa a pagar ($)</label>
+              <div class="input-group">
+                <input type="number" class="form-control" id="montoMultaDevolucion" value="0.00" step="0.01" readonly>
+                <span class="input-group-text">USD</span>
+              </div>
+              <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="multaPagada">
+                <label class="form-check-label" for="multaPagada">Marcar multa como pagada</label>
+              </div>
+              <small class="text-muted d-block">Si corresponde, la multa se calculará según los días de retraso y la tarifa por día configurada.</small>
+            </div>
             <div class="mb-3">
               <label class="form-label">Estado del Libro</label>
               <select class="form-select" id="estadoLibro" required>
@@ -558,6 +571,6 @@ Como reconocimiento, te hemos asignado un beneficio especial.
   <!-- Scripts -->
   <script src="../JS/sidebar.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="../JS/prestamos.js"></script>
+  <script src="../JS/prestamos.js?v=3"></script>
 </body>
 </html>

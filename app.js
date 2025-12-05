@@ -53,6 +53,7 @@ const prestamosRoutes = require("./src/routes/prestamos");
 const emailsRoutes = require("./src/routes/emails");
 const beneficiosRoutes = require("./src/routes/beneficios");
 const perfilRoutes = require('./src/routes/perfil');
+const dashboardRoutes = require('./src/routes/dashboard');
 
 // Middleware de autenticación
 const checkAuth = require('./src/middlewares/checkAuth');
@@ -65,6 +66,7 @@ app.use("/api/prestamos", prestamosRoutes);
 app.use("/api/emails", emailsRoutes);
 app.use("/api/beneficios", beneficiosRoutes);
 app.use('/api/perfil', perfilRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // RUTA PARA WPP
 const wppRoutes = require('./src/routes/wppUser');

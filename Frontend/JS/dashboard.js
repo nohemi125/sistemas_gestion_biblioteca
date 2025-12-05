@@ -1,4 +1,3 @@
-import { Chart } from "@/components/ui/chart"
 // Actualizar fecha y hora en tiempo real
 function actualizarFechaHora() {
   const ahora = new Date()
@@ -19,26 +18,95 @@ function actualizarFechaHora() {
 actualizarFechaHora()
 setInterval(actualizarFechaHora, 1000)
 
-// Datos de ejemplo para las multas por mes
-const multasPorMes = {
-  "2025-01": { total: 1850, cantidad: 28, pagadas: 22, pendientes: 6 },
-  "2024-12": { total: 2100, cantidad: 32, pagadas: 28, pendientes: 4 },
-  "2024-11": { total: 2450, cantidad: 38, pagadas: 32, pendientes: 6 },
-  "2024-10": { total: 2800, cantidad: 42, pagadas: 38, pendientes: 4 },
-  "2024-09": { total: 2300, cantidad: 35, pagadas: 30, pendientes: 5 },
-  "2024-08": { total: 1950, cantidad: 30, pagadas: 27, pendientes: 3 },
+// Cargar resumen del dashboard
+async function cargarResumen() {
+  try {
+    const response = await fetch('/api/dashboard/resumen', {
+      credentials: 'include'
+    })
+    
+    if (!response.ok) {
+      console.error('Error al cargar resumen del dashboard:', response.status)
+      return
+    }
+    
+    const datos = await response.json()
+    
+    // Actualizar contadores
+    const contadores = document.querySelectorAll('.counter-value')
+    if (contadores.length >= 6) {
+      contadores[0].textContent = datos.prestamosActivos || 0
+      contadores[1].textContent = datos.prestamosVencidos || 0
+      contadores[2].textContent = datos.miembrosRegistrados || 0
+      contadores[3].textContent = datos.librosRegistrados || 0
+      contadores[4].textContent = datos.beneficiosOtorgados || 0
+      contadores[5].textContent = `$${(datos.multasDelMes || 0).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    }
+  } catch (error) {
+    console.error('Error cargando resumen:', error)
+  }
 }
 
-// Cambiar datos de multas según el mes seleccionado
-document.getElementById("selectMesMultas").addEventListener("change", function () {
-  const mesSeleccionado = this.value
-  const datos = multasPorMes[mesSeleccionado]
+// Cargar resumen al iniciar
+cargarResumen()
 
-  document.getElementById("totalMultasMes").textContent = `$${datos.total.toLocaleString()}`
-  document.getElementById("cantidadMultasMes").textContent = datos.cantidad
-  document.getElementById("multasPagadas").textContent = datos.pagadas
-  document.getElementById("multasPendientes").textContent = datos.pendientes
-})
+// Cargar estadísticas de multas desde la BD
+async function cargarEstadisticasMultas(mes) {
+  try {
+    console.log('Cargando estadísticas para el mes:', mes);
+    const response = await fetch(`/api/dashboard/multas?mes=${mes}`, {
+      credentials: 'include'
+    })
+    
+    if (!response.ok) {
+      console.error('Error al cargar estadísticas de multas:', response.status)
+      return
+    }
+    
+    const datos = await response.json()
+    console.log('Datos recibidos del servidor:', datos);
+    
+    document.getElementById("totalMultasMes").textContent = `$${(datos.totalMultas || 0).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    document.getElementById("cantidadMultasMes").textContent = datos.generadas || 0
+    document.getElementById("multasPagadas").textContent = datos.pagadas || 0
+    document.getElementById("multasPendientes").textContent = datos.pendientes || 0
+  } catch (error) {
+    console.error('Error cargando multas:', error)
+    document.getElementById("totalMultasMes").textContent = '$0.00'
+    document.getElementById("cantidadMultasMes").textContent = '0'
+    document.getElementById("multasPagadas").textContent = '0'
+    document.getElementById("multasPendientes").textContent = '0'
+  }
+}
+
+// Inicializar selector de mes con el mes actual
+const hoy = new Date()
+const mesActual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`
+const selectMes = document.getElementById("selectMesMultas")
+
+if (selectMes) {
+  // Generar opciones de meses (últimos 12 meses) - Solo nombre del mes
+  selectMes.innerHTML = ''
+  for (let i = 0; i < 12; i++) {
+    const fecha = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1)
+    const valor = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+    const texto = meses[fecha.getMonth()] // Solo el nombre del mes, sin el año
+    const option = document.createElement('option')
+    option.value = valor
+    option.textContent = texto
+    if (i === 0) option.selected = true // El primer elemento es el mes actual
+    selectMes.appendChild(option)
+  }
+
+  // Cargar estadísticas del mes actual
+  cargarEstadisticasMultas(mesActual)
+
+  // Cambiar datos de multas según el mes seleccionado
+  selectMes.addEventListener("change", function () {
+    cargarEstadisticasMultas(this.value)
+  })
+}
 
 // Configuración de colores para los gráficos
 const colores = {
@@ -134,73 +202,104 @@ const graficoPrestamosMes = new Chart(ctxMes, {
   },
 })
 
-// Gráfico de Préstamos por Categoría (Dona)
-const ctxCategoria = document.getElementById("graficoPrestamosCategoria").getContext("2d")
-const graficoPrestamosCategoria = new Chart(ctxCategoria, {
-  type: "doughnut",
-  data: {
-    labels: ["Terror", "Romance", "Ciencia Ficción", "Fantasía", "Misterio", "Aventura", "Poesía"],
-    datasets: [
-      {
-        label: "Préstamos Activos",
-        data: [25, 18, 32, 28, 15, 20, 4],
-        backgroundColor: [
-          colores.danger,
-          colores.warning,
-          colores.primary,
-          colores.purple,
-          colores.secondary,
-          colores.success,
-          colores.accent,
-        ],
-        borderColor: "#fff",
-        borderWidth: 3,
-        hoverOffset: 15,
-      },
-    ],
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: true,
-    plugins: {
-      legend: {
-        display: true,
-        position: "bottom",
-        labels: {
-          font: {
-            size: 11,
+// Cargar datos reales de libros por categoría
+async function cargarLibrosPorCategoria() {
+  try {
+    const response = await fetch('/api/dashboard/libros-categoria', {
+      credentials: 'include'
+    })
+    
+    if (!response.ok) {
+      console.error('Error al cargar libros por categoría:', response.status)
+      return
+    }
+    
+    const datos = await response.json()
+    console.log('Datos de libros por categoría:', datos);
+    
+    if (datos && datos.length > 0) {
+      const labels = datos.map(d => d.categoria)
+      const dataValues = datos.map(d => d.cantidad)
+      
+      // Destruir gráfico anterior si existe
+      if (graficoPrestamosCategoria) {
+        graficoPrestamosCategoria.destroy()
+      }
+      
+      // Crear nuevo gráfico con datos reales
+      const ctxCategoria = document.getElementById("graficoPrestamosCategoria").getContext("2d")
+      graficoPrestamosCategoria = new Chart(ctxCategoria, {
+        type: "doughnut",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: "Libros por Categoría",
+              data: dataValues,
+              backgroundColor: [
+                colores.danger,
+                colores.warning,
+                colores.primary,
+                colores.purple,
+                colores.secondary,
+                colores.success,
+                colores.accent,
+              ],
+              borderColor: "#fff",
+              borderWidth: 3,
+              hoverOffset: 15,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              display: true,
+              position: "bottom",
+              labels: {
+                font: {
+                  size: 11,
+                },
+                padding: 12,
+                usePointStyle: true,
+                pointStyle: "circle",
+              },
+            },
+            tooltip: {
+              backgroundColor: "rgba(0, 0, 0, 0.8)",
+              padding: 12,
+              titleFont: {
+                size: 13,
+                weight: "bold",
+              },
+              bodyFont: {
+                size: 12,
+              },
+              cornerRadius: 8,
+              callbacks: {
+                label: (context) => {
+                  const label = context.label || ""
+                  const value = context.parsed || 0
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0)
+                  const percentage = ((value / total) * 100).toFixed(1)
+                  return `${label}: ${value} (${percentage}%)`
+                },
+              },
+            },
           },
-          padding: 12,
-          usePointStyle: true,
-          pointStyle: "circle",
         },
-      },
-      tooltip: {
-        backgroundColor: "rgba(0, 0, 0, 0.8)",
-        padding: 12,
-        titleFont: {
-          size: 13,
-          weight: "bold",
-        },
-        bodyFont: {
-          size: 12,
-        },
-        cornerRadius: 8,
-        callbacks: {
-          label: (context) => {
-            const label = context.label || ""
-            const value = context.parsed || 0
-            const total = context.dataset.data.reduce((a, b) => a + b, 0)
-            const percentage = ((value / total) * 100).toFixed(1)
-            return `${label}: ${value} (${percentage}%)`
-          },
-        },
-      },
-    },
-  },
-})
+      })
+    }
+  } catch (error) {
+    console.error('Error cargando libros por categoría:', error)
+  }
+}
 
-// Botón de logout
+// Cargar datos reales de libros al iniciar
+cargarLibrosPorCategoria()
+
 document.getElementById("logoutButton").addEventListener("click", () => {
   if (confirm("¿Estás seguro de que deseas salir?")) {
     // Aquí iría la lógica de logout
