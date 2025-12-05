@@ -202,6 +202,9 @@ const graficoPrestamosMes = new Chart(ctxMes, {
   },
 })
 
+// Variable global para el gráfico de categorías
+let graficoPrestamosCategoria = null
+
 // Cargar datos reales de libros por categoría
 async function cargarLibrosPorCategoria() {
   try {
@@ -221,13 +224,21 @@ async function cargarLibrosPorCategoria() {
       const labels = datos.map(d => d.categoria)
       const dataValues = datos.map(d => d.cantidad)
       
+      // Obtener el canvas
+      const canvas = document.getElementById("graficoPrestamosCategoria")
+      if (!canvas) {
+        console.error('Canvas no encontrado')
+        return
+      }
+      
+      const ctxCategoria = canvas.getContext("2d")
+      
       // Destruir gráfico anterior si existe
       if (graficoPrestamosCategoria) {
         graficoPrestamosCategoria.destroy()
       }
       
       // Crear nuevo gráfico con datos reales
-      const ctxCategoria = document.getElementById("graficoPrestamosCategoria").getContext("2d")
       graficoPrestamosCategoria = new Chart(ctxCategoria, {
         type: "doughnut",
         data: {

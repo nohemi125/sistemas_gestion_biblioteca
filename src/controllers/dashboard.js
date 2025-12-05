@@ -75,13 +75,14 @@ const resumen = async (req, res) => {
     }
 };
 
-// GET /api/dashboard/libros-por-categoria
+// GET /api/dashboard/libros-categoria
 const librosPorCategoria = async (req, res) => {
     try {
         const [rows] = await db.query(
-            `SELECT categoria, COUNT(*) AS cantidad
-             FROM libros
-             GROUP BY categoria
+            `SELECT l.categoria, COUNT(*) AS cantidad
+             FROM prestamos p
+             JOIN libros l ON p.id_libro = l.id_libro
+             GROUP BY l.categoria
              ORDER BY cantidad DESC`
         );
 
