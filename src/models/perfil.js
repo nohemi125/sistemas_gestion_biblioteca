@@ -217,6 +217,8 @@ const SMTP = {
 
 
 
+
+
 // Exportar funciones individuales para compatibilidad con controllers
 module.exports = {
   obtenerInstitucion: Institucion.obtenerInstitucion,

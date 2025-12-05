@@ -59,4 +59,6 @@ router.post('/personalizacion', require('../controllers/perfil').guardarPersonal
 router.post('/smtp', require('../controllers/perfil').guardarSMTP);
 
 
+
+
 module.exports = router;

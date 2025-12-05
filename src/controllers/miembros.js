@@ -1,4 +1,6 @@
 const Miembro = require('../models/miembros');
+const db = require('../config/db');
+const PerfilModel = require('../models/perfil');
 
 // Obtener todos los miembros
 const obtenerMiembros = async (req, res) => {
@@ -21,7 +23,59 @@ const obtenerMiembroPorId = async (req, res) => {
       return res.status(404).json({ mensaje: "Miembro no encontrado" });
     }
 
-    res.json(miembro);
+    // Obtener historial de préstamos del miembro (con título de libro)
+    const [prestamos] = await db.query(`
+      SELECT 
+        p.id_prestamo,
+        p.id_miembro,
+        p.id_libro,
+        p.fecha_prestamo,
+        p.fecha_devolucion,
+        p.estado,
+        l.titulo AS titulo_libro,
+        CASE 
+          WHEN p.fecha_devolucion IS NOT NULL AND p.fecha_devolucion < CURDATE() AND p.estado <> 'Devuelto' THEN DATEDIFF(CURDATE(), p.fecha_devolucion)
+          WHEN p.fecha_devolucion IS NULL AND p.estado <> 'Devuelto' AND p.fecha_prestamo < CURDATE() THEN DATEDIFF(CURDATE(), p.fecha_prestamo)
+          ELSE 0
+        END AS dias_retraso
+      FROM prestamos p
+      LEFT JOIN libros l ON l.id_libro = p.id_libro
+      WHERE p.id_miembro = ?
+      ORDER BY p.fecha_prestamo DESC
+    `, [id]);
+
+    // Obtener configuración de multa (valor por día y días de tolerancia)
+    let multaConf = null;
+    try {
+      multaConf = await PerfilModel.obtenerMulta();
+    } catch (err) {
+      console.warn('No se pudo obtener config de multa:', err.message || err);
+    }
+
+    // Calcular multas por préstamo (si aplica)
+    const multas = [];
+    const valorPorDia = multaConf && multaConf.valor_multa ? parseFloat(multaConf.valor_multa) : 0;
+    const diasTolerancia = multaConf && multaConf.dias_tolerancia ? parseInt(multaConf.dias_tolerancia) : 0;
+
+    for (const p of prestamos) {
+      const dias = Number(p.dias_retraso) || 0;
+      const diasCobrar = Math.max(0, dias - diasTolerancia);
+      const monto = diasCobrar > 0 && valorPorDia > 0 ? Number((diasCobrar * valorPorDia).toFixed(2)) : 0;
+      if (monto > 0) {
+        multas.push({
+          id_prestamo: p.id_prestamo,
+          titulo_libro: p.titulo_libro,
+          dias_retraso: dias,
+          dias_cobrar: diasCobrar,
+          monto
+        });
+      }
+    }
+
+    // Actualmente no existe una tabla de beneficios asignados; devolver array vacío
+    const beneficios = [];
+
+    return res.json({ ...miembro, prestamos, multas, beneficios });
   } catch (error) {
     console.error("Error al obtener miembro:", error);
     res.status(500).json({ error: "Error al obtener el miembro" });

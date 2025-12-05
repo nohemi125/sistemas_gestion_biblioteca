@@ -1002,3 +1002,194 @@ document.querySelectorAll('.input-group').forEach(group => {
     });
   }
 });
+
+
+
+
+// ===FORMULARIO DE BENEFICIOS===
+
+const formBeneficio = document.getElementById("formAgregarBeneficio");
+const listaBeneficios = document.getElementById("listaBeneficios"); // EL DIV DONDE SE LISTAN
+
+//. AGREGAR BENEFICIO
+formBeneficio.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const nombre = document.getElementById("nombreBeneficio").value;
+    const descripcion = document.getElementById("descripcionBeneficio").value;
+
+    try {
+        const res = await fetch("/api/beneficios", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nombre, descripcion })
+        });
+
+        const data = await res.json();
+
+        if (data.ok) {
+          const cont = document.getElementById('mensajeBeneficio');
+            if (cont) {
+              cont.innerHTML = `<div class="alert alert-success"><i class="bi bi-check-circle me-2"></i><strong>Éxito</strong> - ${data.mensaje || 'Beneficio agregado correctamente'}</div>`;
+              setTimeout(() => { try { cont.innerHTML = ''; } catch (e) {} }, 6000);
+            } else {
+              showModalMessage('Éxito', data.mensaje || 'Beneficio agregado correctamente', 'success');
+            }
+            mostrarBeneficios();        // recargar lista
+            formBeneficio.reset();      // limpiar form
+        } else {
+          const cont = document.getElementById('mensajeBeneficio');
+            const errMsg = (data && data.mensaje) || 'Error al guardar el beneficio';
+            if (cont) {
+              cont.innerHTML = `<div class="alert alert-danger"><i class="bi bi-exclamation-circle me-2"></i><strong>Error</strong> - ${errMsg}</div>`;
+              setTimeout(() => { try { cont.innerHTML = ''; } catch (e) {} }, 6000);
+            } else {
+              showModalMessage('Error', errMsg, 'danger');
+            }
+        }
+
+    } catch (error) {
+        console.error("Error:", error);
+      const cont = document.getElementById('mensajeBeneficio');
+      if (cont) {
+        cont.innerHTML = `<div class="alert alert-danger"><i class="bi bi-exclamation-circle me-2"></i><strong>Error</strong> - Ocurrió un error al guardar el beneficio</div>`;
+        setTimeout(() => { try { cont.innerHTML = ''; } catch (e) {} }, 6000);
+      } else {
+        showModalMessage('Error', 'Ocurrió un error al guardar el beneficio', 'danger');
+      }
+    }
+});
+
+//  LISTAR BENEFICIOS
+async function mostrarBeneficios() {
+    try {
+        const res = await fetch("/api/beneficios");
+        const data = await res.json();
+
+        if (!data.ok) {
+            console.error("Error al obtener beneficios");
+            return;
+        }
+
+        const beneficios = data.beneficios; // AQUÍ ESTÁ EL ARRAY REAL
+
+        const tbody = document.querySelector("#tablaBeneficios tbody");
+        tbody.innerHTML = "";
+
+        beneficios.forEach((b, index) => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${index + 1}</td>
+              <td class="text-start">${b.nombre}</td>
+              <td class="text-start">${b.descripcion}</td>
+              <td>
+                <i class="bi bi-pencil-square text-warning" onclick="editarBeneficio(${b.id_beneficio})" style="cursor:pointer; font-size:1.2rem;" title="Editar"></i>
+                <i class="bi bi-trash text-danger ms-3" onclick="eliminarBeneficio(${b.id_beneficio})" style="cursor:pointer; font-size:1.2rem;" title="Eliminar"></i>
+              </td>
+            </tr>
+          `;
+        });
+    } catch (error) {
+        console.error("Error:", error);
+    }
+}
+
+  
+//  ELIMINAR BENEFICIO
+async function eliminarBeneficio(id) {
+  try {
+    const confirmado = await showConfirm('Confirmar eliminación', '¿Seguro que deseas eliminar este beneficio?', 'Eliminar', 'Cancelar', 'danger');
+    if (!confirmado) return;
+
+    const res = await fetch(`/api/beneficios/${id}`, { method: "DELETE" });
+    const data = await res.json().catch(() => ({}));
+
+    if (res.ok) {
+      showModalMessage('Éxito', data.mensaje || 'Beneficio eliminado correctamente', 'success');
+      mostrarBeneficios();
+    } else {
+      showModalMessage('Error', (data && data.mensaje) || 'No se pudo eliminar el beneficio', 'danger');
+    }
+  } catch (error) {
+    console.error("Error eliminando beneficio:", error);
+    showModalMessage('Error', 'Ocurrió un error al eliminar el beneficio', 'danger');
+  }
+}
+
+// Inicializamos la lista al cargar
+mostrarBeneficios();
+
+// Función para editar un beneficio: carga datos en el modal y lo muestra
+async function editarBeneficio(id) {
+  try {
+    const resp = await fetch(`/api/beneficios/${id}`);
+    const json = await resp.json();
+
+    if (!resp.ok || !json.ok) {
+      showModalMessage('Error', (json && json.mensaje) || 'No se pudo cargar el beneficio', 'danger');
+      return;
+    }
+
+    const b = json.beneficio || json.data || json;
+    document.getElementById('editBeneficioId').value = id;
+    document.getElementById('editBeneficioNombre').value = b.nombre || '';
+    document.getElementById('editBeneficioDescripcion').value = b.descripcion || '';
+
+    // mostrar modal
+    try {
+      const modalEl = document.getElementById('modalEditarBeneficio');
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    } catch (e) {
+      console.warn('Bootstrap modal no disponible todavía:', e);
+    }
+  } catch (err) {
+    console.error('Error cargando beneficio para editar:', err);
+    showModalMessage('Error', 'Error cargando datos del beneficio', 'danger');
+  }
+}
+
+// Exponer la función globalmente para llamadas inline desde HTML
+window.editarBeneficio = editarBeneficio;
+
+// Manejador del botón Guardar del modal de edición
+const btnGuardarBeneficio = document.getElementById('btnGuardarBeneficio');
+if (btnGuardarBeneficio) {
+  btnGuardarBeneficio.addEventListener('click', async (e) => {
+    const id = document.getElementById('editBeneficioId').value;
+    const nombre = document.getElementById('editBeneficioNombre').value.trim();
+    const descripcion = document.getElementById('editBeneficioDescripcion').value.trim();
+
+    if (!nombre) {
+      const msgEl = document.getElementById('mensajeEditarBeneficio');
+      if (msgEl) msgEl.innerHTML = `<div class="alert alert-danger">El nombre es obligatorio.</div>`;
+      return;
+    }
+
+    try {
+      const resp = await fetch(`/api/beneficios/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, descripcion })
+      });
+      const data = await resp.json().catch(() => ({}));
+
+      if (resp.ok) {
+        const msgEl = document.getElementById('mensajeBeneficio');
+        if (msgEl) msgEl.innerHTML = `<div class="alert alert-success"><i class="bi bi-check-circle me-2"></i>Beneficio actualizado correctamente</div>`;
+        // ocultar modal
+        try { const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarBeneficio')); if (modal) modal.hide(); } catch(e){}
+        mostrarBeneficios();
+        setTimeout(() => { try { if (msgEl) msgEl.innerHTML = ''; } catch(e){} }, 4000);
+      } else {
+        const errMsg = (data && data.mensaje) || 'No se pudo actualizar el beneficio';
+        const msgEl = document.getElementById('mensajeEditarBeneficio');
+        if (msgEl) msgEl.innerHTML = `<div class="alert alert-danger">${errMsg}</div>`;
+      }
+    } catch (err) {
+      console.error('Error actualizando beneficio:', err);
+      const msgEl = document.getElementById('mensajeEditarBeneficio');
+      if (msgEl) msgEl.innerHTML = `<div class="alert alert-danger">Ocurrió un error al actualizar el beneficio</div>`;
+    }
+  });
+}

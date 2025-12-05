@@ -941,6 +941,140 @@ document.addEventListener("DOMContentLoaded", () => {
   const modalBeneficiosEl = document.getElementById("modalBeneficios")
   const modalAsignarBeneficioEl = document.getElementById("modalAsignarBeneficio")
   const formAsignarBeneficio = document.getElementById("formAsignarBeneficio")
+  const beneficiosDatalistEl = document.getElementById('beneficiosDatalist')
+  const beneficiosInputEl = document.getElementById('beneficiosInput')
+  const beneficiosTagsEl = document.getElementById('beneficiosTags')
+  const beneficiosDropdownEl = document.getElementById('beneficiosDropdown')
+  const beneficiosInputBox = document.getElementById('beneficiosInputBox')
+  const beneficiosToggleBtn = document.getElementById('beneficiosToggleBtn')
+
+  // Cache de beneficios y selección (solo 1 beneficio)
+  let beneficiosCache = []
+  let selectedBeneficioId = null // id seleccionado
+  let currentMiembroNombre = ''
+
+  // Cargar beneficios disponibles desde backend y poblar el datalist
+  async function cargarBeneficiosDisponibles() {
+    try {
+      const resp = await fetch('/api/beneficios', { credentials: 'include' })
+      const json = await resp.json()
+      if (!resp.ok || !json.ok) {
+        beneficiosCache = Array.isArray(json) ? json : (json.beneficios || [])
+      } else {
+        beneficiosCache = json.beneficios || []
+      }
+
+      // Poblar datalist
+      if (beneficiosDatalistEl) {
+        beneficiosDatalistEl.innerHTML = ''
+        beneficiosCache.forEach(b => {
+          const opt = document.createElement('option')
+          opt.value = b.nombre || b.nombre_beneficio || ''
+          // almacenar id en data-id para búsqueda posterior
+          if (b.id_beneficio || b.id) opt.dataset.id = String(b.id_beneficio || b.id)
+          beneficiosDatalistEl.appendChild(opt)
+        })
+      }
+    } catch (err) {
+      console.error('Error cargando beneficios:', err)
+      if (beneficiosDatalistEl) beneficiosDatalistEl.innerHTML = ''
+    }
+  }
+
+  // Seleccionar beneficio por nombre (busca id en cache) -- selección única
+  function addBeneficioByName(name) {
+    if (!name) return
+    const found = beneficiosCache.find(b => String(b.nombre || b.nombre_beneficio || '').toLowerCase() === String(name).toLowerCase())
+    if (!found) {
+      mostrarToast('Beneficio no encontrado en la lista', 'warning')
+      return
+    }
+    const id = String(found.id_beneficio || found.id || '')
+    if (!id) return
+    selectedBeneficioId = id
+    // mostrar el nombre en el input
+    beneficiosInputEl.value = found.nombre || found.nombre_beneficio || ''
+    // ocultar dropdown
+    if (beneficiosDropdownEl) beneficiosDropdownEl.style.display = 'none'
+
+    // Insertar la plantilla solicitada con título y descripción en el mensaje del modal
+    try {
+      const mensajeEl = document.getElementById('mensajeBeneficio')
+      const desc = found.descripcion || found.descripcion_beneficio || found.descripcion_corta || found.detalle || ''
+      if (mensajeEl) {
+        const titulo = found.nombre || found.nombre_beneficio || ''
+        const plantilla = `🎉¡Felicidades ${currentMiembroNombre || ''}!\n\nHas sido seleccionado/a para recibir un beneficio especial por tu excelente participación en nuestra biblioteca.\n\n\nComo reconocimiento, te hemos asignado un beneficio especial.\n*titulo*\n${desc}🥳🥳\n\n¡Gracias por ser parte de nuestra comunidad de lectores! `
+        mensajeEl.value = plantilla
+      }
+    } catch (e) {
+      // noop
+    }
+  }
+
+  // Seleccionar beneficio por id (selección única)
+  function addBeneficioById(id) {
+    const found = beneficiosCache.find(b => String(b.id_beneficio || b.id || '') === String(id))
+    if (!found) {
+      mostrarToast('Beneficio no encontrado', 'warning')
+      return
+    }
+    const _id = String(found.id_beneficio || found.id || '')
+    if (!_id) return
+    selectedBeneficioId = _id
+    beneficiosInputEl.value = found.nombre || found.nombre_beneficio || ''
+    if (beneficiosDropdownEl) beneficiosDropdownEl.style.display = 'none'
+
+    // Insertar la plantilla solicitada con título y descripción en el mensaje del modal
+    try {
+      const mensajeEl = document.getElementById('mensajeBeneficio')
+      const desc = found.descripcion || found.descripcion_beneficio || found.descripcion_corta || found.detalle || ''
+      if (mensajeEl) {
+        const titulo = found.nombre || found.nombre_beneficio || ''
+        const plantilla = `¡Felicidades ${currentMiembroNombre || ''}!\n\nHas sido seleccionado/a para recibir un beneficio especial por tu excelente participación en nuestra biblioteca.\n\n\nComo reconocimiento, te hemos asignado un beneficio especial.\n${titulo}\n"${desc}"\n\n¡Gracias por ser parte de nuestra comunidad de lectores!`
+        mensajeEl.value = plantilla
+      }
+    } catch (e) {
+      // noop
+    }
+  }
+
+  // En la versión de selección única, no mostramos chips; el input muestra la opción
+  function renderBeneficioTags() {
+    // mantener el valor del input si hay selección
+    if (!beneficiosInputEl) return
+    if (!selectedBeneficioId) {
+      beneficiosInputEl.value = ''
+      return
+    }
+    const b = beneficiosCache.find(x => String(x.id_beneficio || x.id) === String(selectedBeneficioId)) || { nombre: selectedBeneficioId }
+    beneficiosInputEl.value = b.nombre || b.nombre_beneficio || ''
+  }
+
+  // Añadir con Enter o al seleccionar del datalist
+  if (beneficiosInputEl) {
+    beneficiosInputEl.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') {
+        ev.preventDefault()
+        addBeneficioByName(beneficiosInputEl.value.trim())
+      }
+    })
+    beneficiosInputEl.addEventListener('blur', () => {
+      // on blur, try to add if exact match
+      const val = beneficiosInputEl.value.trim()
+      if (val) addBeneficioByName(val)
+    })
+  }
+
+  // Helper para escapar texto (evita inyección desde backend)
+  function escapeHtml(str) {
+    if (!str && str !== 0) return ''
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+  }
 
   async function cargarMiembrosBeneficios(min = 0, dias = 30, minDaysPerLoan = 7) {
     if (!tablaBeneficiosEl) return
@@ -1009,7 +1143,75 @@ document.addEventListener("DOMContentLoaded", () => {
       const dias = Number(diasPeriodo ? diasPeriodo.value : 30) || 30
       const minDaysPerLoan = Number(minDiasPorPrestamoEl ? minDiasPorPrestamoEl.value : 7) || 7
       cargarMiembrosBeneficios(min, dias, minDaysPerLoan)
+      // También cargar la lista de tipos de beneficios
+      cargarBeneficiosDisponibles()
     })
+  }
+
+  // Población del dropdown y comportamiento del input
+  function populateBeneficiosDropdown(filter = '') {
+    if (!beneficiosDropdownEl) return
+    beneficiosDropdownEl.innerHTML = ''
+    const q = String(filter || '').toLowerCase()
+    const list = beneficiosCache.filter(b => (b.nombre || b.nombre_beneficio || '').toLowerCase().includes(q))
+    if (list.length === 0) {
+      beneficiosDropdownEl.style.display = 'none'
+      return
+    }
+    list.forEach(b => {
+      const btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'list-group-item list-group-item-action'
+      btn.textContent = b.nombre || b.nombre_beneficio || ''
+      btn.dataset.id = String(b.id_beneficio || b.id || '')
+      // use mousedown to allow selection before blur
+      btn.addEventListener('mousedown', (ev) => {
+        ev.preventDefault()
+        addBeneficioById(btn.dataset.id)
+        // hide dropdown shortly after
+        setTimeout(() => { if (beneficiosDropdownEl) beneficiosDropdownEl.style.display = 'none' }, 50)
+      })
+      beneficiosDropdownEl.appendChild(btn)
+    })
+    beneficiosDropdownEl.style.display = 'block'
+  }
+
+  if (beneficiosInputEl) {
+    beneficiosInputEl.addEventListener('focus', () => {
+      populateBeneficiosDropdown('')
+    })
+    beneficiosInputEl.addEventListener('input', (e) => {
+      populateBeneficiosDropdown(e.target.value || '')
+    })
+    beneficiosInputEl.addEventListener('blur', () => {
+      // hide after a short delay to allow click
+      setTimeout(() => { if (beneficiosDropdownEl) beneficiosDropdownEl.style.display = 'none' }, 150)
+    })
+    // If user clicks the surrounding box, focus the input
+    if (beneficiosInputBox) {
+      beneficiosInputBox.addEventListener('click', (e) => {
+        // avoid focusing when clicking the remove button inside a tag
+        const target = e.target
+        if (target && target.closest && target.closest('.btn-close')) return
+        beneficiosInputEl.focus()
+      })
+    }
+    // Toggle button to open/close full list
+    if (beneficiosToggleBtn) {
+      beneficiosToggleBtn.addEventListener('click', (ev) => {
+        ev.preventDefault()
+        ev.stopPropagation()
+        if (!beneficiosDropdownEl) return
+        if (beneficiosDropdownEl.style.display === 'block') {
+          beneficiosDropdownEl.style.display = 'none'
+        } else {
+          // show full list
+          populateBeneficiosDropdown('')
+          // focus input for keyboard
+          try { beneficiosInputEl.focus() } catch(e){}
+        }
+      })
+    }
   }
 
   // Delegación: abrir modal de asignación con datos del miembro
@@ -1028,9 +1230,17 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       formAsignarBeneficio.dataset.miembroId = miembroId
+      // recordar que abrimos este modal desde modalBeneficios para poder volver a él
+      try { window.__openedFrom = 'modalBeneficios' } catch (e) {}
+      currentMiembroNombre = nombre || ''
+      // limpiar selección anterior y preparar input (selección única)
+      selectedBeneficioId = null
+      renderBeneficioTags()
+      // Asegurarse de tener la lista cargada
+      try { cargarBeneficiosDisponibles() } catch(e){}
       const mensajeInput = document.getElementById('mensajeBeneficio')
       if (mensajeInput) {
-        mensajeInput.value = `¡Felicidades ${nombre}!\n\nHas sido seleccionado/a para recibir un beneficio especial por tu excelente participación en nuestra biblioteca.\n\nEste periodo has realizado ${prestamosNum} préstamos.\n\nComo reconocimiento, te hemos asignado un beneficio especial.\n\n¡Gracias por ser parte de nuestra comunidad de lectores!`
+        mensajeInput.value = `¡Felicidades ${nombre}!\n\nHas sido seleccionado/a para recibir un beneficio especial por tu excelente participación en nuestra biblioteca.\n\n\nComo reconocimiento, te hemos asignado un beneficio especial.\n\n\n¡Gracias por ser parte de nuestra comunidad de lectores!`
       }
     })
 
@@ -1038,31 +1248,69 @@ document.addEventListener("DOMContentLoaded", () => {
     formAsignarBeneficio.addEventListener('submit', async (e) => {
       e.preventDefault()
       const miembroId = formAsignarBeneficio.dataset.miembroId || ''
-      const tipo = document.getElementById('tipoBeneficio').value
       const mensaje = document.getElementById('mensajeBeneficio').value
 
-      if (!tipo) {
-        mostrarToast('Seleccione un tipo de beneficio', 'warning')
+      // usar el id seleccionado (solo 1)
+      if (!selectedBeneficioId) {
+        mostrarToast('Seleccione un beneficio', 'warning')
         return
       }
 
       try {
+        // leer casillas de canales dentro del formulario
+        const enviarEmail = formAsignarBeneficio.querySelector('#checkEmail') ? formAsignarBeneficio.querySelector('#checkEmail').checked : true
+        const enviarWhatsapp = formAsignarBeneficio.querySelector('#checkWhatsapp') ? formAsignarBeneficio.querySelector('#checkWhatsapp').checked : false
+
+        const body = { id_miembro: miembroId, tipo: selectedBeneficioId, mensaje, canales: { email: !!enviarEmail, whatsapp: !!enviarWhatsapp } }
         const resp = await fetch('/api/beneficios/asignar', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ id_miembro: miembroId, tipo, mensaje }),
+          body: JSON.stringify(body),
         })
 
-        if (resp.ok) {
-          mostrarToast('Beneficio asignado y notificación enviada', 'success')
+        const data = await resp.json().catch(() => null)
+        console.log('respuesta /api/beneficios/asignar ->', resp.status, data)
+
+        if (resp.ok && data && data.ok) {
+          const r = data.resultados || {}
+          const dest = data.destinatario || ''
+          // Mostrar toasts específicos por canal
+          try {
+            if (r.email === 'enviado') {
+              mostrarToast(`Email enviado a ${dest}`, 'success')
+            } else if (r.email === 'error') {
+              mostrarToast('Error enviando Email', 'danger')
+            } else if (r.email === 'no_email') {
+              mostrarToast('Miembro sin email registrado', 'warning')
+            }
+
+            if (r.whatsapp === 'enviado') {
+              mostrarToast(`WhatsApp enviado a ${dest}`, 'success')
+            } else if (r.whatsapp === 'no_conectado') {
+              mostrarToast('WhatsApp no está vinculado o no está conectado', 'warning')
+            } else if (r.whatsapp === 'no_celular') {
+              mostrarToast('Miembro sin número de celular registrado', 'warning')
+            } else if (r.whatsapp === 'error') {
+              mostrarToast('Error enviando WhatsApp', 'danger')
+            }
+          } catch (e) { console.warn(e) }
+          // limpiar cualquier aviso inline si existe
+          try { document.getElementById('canalesStatus').innerHTML = '' } catch (e) {}
+        } else if (resp.ok) {
+          mostrarToast('Beneficio asignado (respuesta inesperada del servidor)', 'warning')
         } else {
-          mostrarToast('Beneficio asignado (simulado) y mensaje listo', 'success')
+          const msg = (data && (data.mensaje || data.error)) || 'Error al asignar beneficio'
+          mostrarToast(msg, 'danger')
+          try { document.getElementById('canalesStatus').innerHTML = '' } catch(e){}
         }
       } catch (err) {
-        mostrarToast('Beneficio asignado (simulado) y mensaje listo', 'success')
+        console.error('Error llamando /api/beneficios/asignar', err)
+        mostrarToast('Error enviando notificación de beneficio', 'danger')
       }
 
+      // Indicar que queremos volver a este modal cuando se cierre el modalMensaje
+      try { window.__returnToModal = 'modalAsignarBeneficio' } catch (e) {}
       const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalAsignarBeneficio'))
       if (modalInstance) modalInstance.hide()
     })
@@ -1070,6 +1318,69 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Inicializar
   cargarPrestamos()
+
+  // Manejo: cuando se muestra el modal genérico `#modalMensaje`, ocultar cualquier modal
+  // que esté abierto (por ejemplo `modalAsignarBeneficio`) y recordar el último abierto
+  // para volver a mostrarlo cuando `modalMensaje` se cierre.
+  try {
+    const modalMensajeEl = document.getElementById('modalMensaje')
+    if (modalMensajeEl) {
+      modalMensajeEl.addEventListener('shown.bs.modal', () => {
+        try {
+          const open = Array.from(document.querySelectorAll('.modal.show')).filter(m => m.id && m.id !== 'modalMensaje')
+          if (open.length > 0) {
+            // recordar el último modal abierto
+            window.__returnToModal = open[open.length - 1].id
+            // ocultar todos los modales abiertos (excepto modalMensaje)
+            open.forEach(m => {
+              try {
+                const inst = bootstrap.Modal.getInstance(m) || new bootstrap.Modal(m)
+                inst.hide()
+              } catch (e) {}
+            })
+          }
+        } catch (e) {
+          // noop
+        }
+      })
+
+      modalMensajeEl.addEventListener('hidden.bs.modal', () => {
+        try {
+          const id = window.__returnToModal
+          if (id) {
+            window.__returnToModal = null
+            const el = document.getElementById(id)
+            if (el) {
+              const inst = new bootstrap.Modal(el)
+              inst.show()
+            }
+          }
+        } catch (e) {
+          // noop
+        }
+      })
+    }
+  } catch (e) {
+    // noop
+  }
+
+  // Si el modal de asignación se cierra, volver al modal de listado si se abrió desde allí
+  try {
+    if (modalAsignarBeneficioEl) {
+      modalAsignarBeneficioEl.addEventListener('hidden.bs.modal', () => {
+        try {
+          if (window.__openedFrom === 'modalBeneficios' && modalBeneficiosEl) {
+            // limpiar la marca antes de reabrir
+            window.__openedFrom = null
+            const inst = new bootstrap.Modal(modalBeneficiosEl)
+            inst.show()
+          }
+        } catch (e) {
+          // noop
+        }
+      })
+    }
+  } catch (e) {}
 
 
 

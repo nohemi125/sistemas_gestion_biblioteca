@@ -437,13 +437,55 @@ async function verDetalleMiembro(idMiembro) {
       ? new Date(miembro.fecha_inscripcion).toLocaleDateString('es-CO')
       : '-';
 
-    // Secciones aún no implementadas en backend: mostrar por defecto
-    document.getElementById('detalleHistorialPrestamos').innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay préstamos registrados</td></tr>';
-    document.getElementById('detalleBeneficios').innerHTML = '<p class="text-muted mb-0">No hay beneficios asignados</p>';
-    document.getElementById('detalleMultas').innerHTML = '<p class="text-muted mb-0">No hay multas registradas</p>';
+
+    // Rellenar historial de préstamos
+    const historialEl = document.getElementById('detalleHistorialPrestamos');
+    const prestamos = Array.isArray(miembro.prestamos) ? miembro.prestamos : [];
+    if (prestamos.length === 0) {
+      historialEl.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No hay préstamos registrados</td></tr>';
+    } else {
+      historialEl.innerHTML = prestamos.map(p => {
+        const fechaPrestamo = p.fecha_prestamo ? new Date(p.fecha_prestamo).toLocaleDateString('es-CO') : '-';
+        const fechaDevolucion = p.fecha_devolucion ? new Date(p.fecha_devolucion).toLocaleDateString('es-CO') : 'Pendiente';
+        const titulo = p.titulo_libro || '-';
+        const estado = p.estado || '-';
+        return `<tr>
+          <td>${p.id_prestamo}</td>
+          <td>${titulo}</td>
+          <td>${fechaPrestamo}</td>
+          <td>${fechaDevolucion}</td>
+          <td>${estado}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // Rellenar beneficios (si vienen)
+    const beneficiosEl = document.getElementById('detalleBeneficios');
+    const beneficios = Array.isArray(miembro.beneficios) ? miembro.beneficios : [];
+    if (beneficios.length === 0) {
+      beneficiosEl.innerHTML = '<p class="text-muted mb-0">No hay beneficios asignados</p>';
+    } else {
+      beneficiosEl.innerHTML = '<ul class="mb-0">' + beneficios.map(b => `<li><strong>${b.nombre || b.titulo || 'Beneficio'}</strong> - ${b.descripcion || ''}</li>`).join('') + '</ul>';
+    }
+
+    // Rellenar multas (si existen)
+    const multasEl = document.getElementById('detalleMultas');
+    const multas = Array.isArray(miembro.multas) ? miembro.multas : [];
+    if (multas.length === 0) {
+      multasEl.innerHTML = '<p class="text-muted mb-0">No hay multas registradas</p>';
+    } else {
+      multasEl.innerHTML = '<div class="list-group">' + multas.map(m => `
+        <div class="list-group-item d-flex justify-content-between align-items-start">
+          <div>
+            <div class="fw-bold">${m.titulo_libro || 'Préstamo ' + m.id_prestamo}</div>
+            <div class="small text-muted">Días de retraso: ${m.dias_retraso} (días a cobrar: ${m.dias_cobrar})</div>
+          </div>
+          <div class="text-danger fw-bold">$${Number(m.monto).toFixed(2)}</div>
+        </div>`).join('') + '</div>';
+    }
 
     // Guardar datos del miembro para las descargas
-    window.miembroActual = { miembro, prestamos: [], beneficios: [], multas: [] };
+    window.miembroActual = { miembro, prestamos, beneficios, multas };
 
     // Mostrar el modal
     const modal = new bootstrap.Modal(document.getElementById('modalDetalleMiembro'));

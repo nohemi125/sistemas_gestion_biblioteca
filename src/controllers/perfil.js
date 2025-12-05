@@ -190,6 +190,7 @@ const guardarSMTP = async (req, res) => {
 };
 
 
+
 module.exports = {
   obtenerInstitucion,
   guardarInstitucion,
@@ -200,6 +201,7 @@ module.exports = {
   guardarMulta,
   guardarPersonalizacion,
  obtenerPersonalizacion,
- guardarSMTP
+ guardarSMTP,
+
 
 };

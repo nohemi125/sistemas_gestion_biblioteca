@@ -472,6 +472,7 @@ Gracias.</textarea>
               </tbody>
             </table>
           </div>
+          <!-- Nota: los beneficios ahora se seleccionan desde el modal de asignación -->
         </div>
       </div>
     </div>
@@ -490,16 +491,23 @@ Gracias.</textarea>
             <strong>Miembro:</strong> Ana Martínez<br>
             <strong>Préstamos este mes:</strong> 6
           </div>
+          <div id="canalesStatus"></div>
           <form id="formAsignarBeneficio">
             <div class="mb-3">
-              <label class="form-label">Tipo de Beneficio</label>
-              <select class="form-select" id="tipoBeneficio" required>
-                <option value="">Seleccionar beneficio...</option>
-                <option value="descuento">Descuento en multas (50%)</option>
-                <option value="extension">Extensión de préstamo (+7 días)</option>
-                <option value="prioridad">Prioridad en reservas</option>
-                <option value="gratuito">Préstamo extra gratuito</option>
-              </select>
+              <label class="form-label">Seleccionar beneficio(s)</label>
+              <div id="beneficiosTagContainer" style="position:relative;">
+                <label for="beneficiosInput" class="form-label visually-hidden">Beneficios</label>
+                <div class="beneficios-input-box form-control d-flex flex-wrap align-items-center" id="beneficiosInputBox" style="min-height:44px; gap:.4rem;">
+                  <div class="d-flex flex-wrap gap-2" id="beneficiosTags"></div>
+                  <input id="beneficiosInput" list="beneficiosDatalist" class="flex-grow-1 border-0" style="min-width:160px; outline: none;" placeholder="Escribe o elige un beneficio y presiona Enter" autocomplete="off">
+                  <button type="button" id="beneficiosToggleBtn" class="btn btn-link p-0 ms-2" style="color: #333;">
+                    <i class="bi bi-caret-down-fill" aria-hidden="true"></i>
+                  </button>
+                </div>
+                <datalist id="beneficiosDatalist"></datalist>
+                <div id="beneficiosDropdown" class="list-group mt-2" style="max-height:240px; overflow:auto; display:none; z-index:2000; position:absolute; left:0; right:0; top:calc(100% + .35rem);"></div>
+                <small class="text-muted">Puedes seleccionar varios beneficios; presiona Enter para agregarlos.</small>
+              </div>
             </div>
             <div class="mb-3">
               <label class="form-label">Mensaje de Notificación</label>

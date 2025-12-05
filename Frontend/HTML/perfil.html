@@ -543,72 +543,82 @@
     </div>
   </div>
 
+
   <!-- FORMULARIO DE BENEFICIOS -->
-  <div class="col-12 col-lg-6 mb-4">
-    <div class="card shadow-sm h-100">
-      <div class="card-header bg-primary text-white">
-        <h5 class="mb-0">
-          <i class="bi bi-gift-fill me-2"></i>Gestión de Tipos de Beneficios
-        </h5>
-      </div>
+<div class="col-12 col-lg-6 mb-4">
+  <div class="card shadow-sm h-100">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">
+        <i class="bi bi-gift-fill me-2"></i>Gestión de Tipos de Beneficios
+      </h5>
+    </div>
 
-      <div class="card-body">
-        <form id="formAgregarBeneficio">
-          <div class="row">
+    <div class="card-body">
+      <form id="formAgregarBeneficio">
+        <div class="row">
 
-            <div class="col-12 mb-3">
-              <label for="nombreBeneficio" class="form-label fw-bold">
-                <i class="bi bi-tag me-2"></i>Nombre del Beneficio
-              </label>
-              <input type="text" class="form-control" id="nombreBeneficio"
-                placeholder="Ej: Descuento en Librería, Préstamo Extendido" required>
-            </div>
-
-            <div class="col-12 mb-3">
-              <label for="limiteBeneficio" class="form-label fw-bold">
-                <i class="bi bi-clock-history me-2"></i>Tipo de Límite de Uso
-              </label>
-              <select class="form-select" id="limiteBeneficio" required>
-                <option value="" disabled selected>Selecciona un tipo de límite</option>
-                <option value="sin_limite">Sin Límite</option>
-                <option value="diario">Diario</option>
-                <option value="semanal">Semanal</option>
-                <option value="mensual">Mensual</option>
-              </select>
-            </div>
-
-            <div class="col-12 mb-3">
-              <label for="descripcionBeneficio" class="form-label fw-bold">
-                <i class="bi bi-card-text me-2"></i>Descripción del Beneficio
-              </label>
-              <textarea class="form-control" id="descripcionBeneficio" rows="3"
-                placeholder="Detalle el beneficio y sus condiciones." required></textarea>
-            </div>
-
-            <div class="col-12">
-              <button type="submit" class="btn btn-primary">
-                <i class="bi bi-plus-circle-fill me-2"></i>Agregar Tipo de Beneficio
-              </button>
-              <button type="reset" class="btn btn-outline-danger ms-2">
-                <i class="bi bi-x-circle me-2"></i>Limpiar Formulario
-              </button>
-            </div>
-
+          <!-- Nombre del beneficio -->
+          <div class="col-12 mb-3">
+            <label for="nombreBeneficio" class="form-label fw-bold">
+              <i class="bi bi-tag me-2"></i>Nombre del Beneficio
+            </label>
+            <input type="text" class="form-control" id="nombreBeneficio"
+              placeholder="Ej: Descuento en Librería, Préstamo Extendido" required>
           </div>
-        </form>
 
-        <div id="mensajeBeneficio" class="mt-3"></div>
+          <!-- Descripción -->
+          <div class="col-12 mb-3">
+            <label for="descripcionBeneficio" class="form-label fw-bold">
+              <i class="bi bi-card-text me-2"></i>Descripción del Beneficio
+            </label>
+            <textarea class="form-control" id="descripcionBeneficio" rows="3"
+              placeholder="Detalle el beneficio y sus condiciones." required></textarea>
+          </div>
 
-      </div>
+          <!-- Botón agregar -->
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary w-100">
+              <i class="bi bi-plus-circle-fill me-2"></i>Agregar Beneficio
+            </button>
+          </div>
+
+        </div>
+      </form>
+
+      <div id="mensajeBeneficio" class="mt-3"></div>
     </div>
   </div>
-
 </div>
 
-     
+<!-- TABLA DE BENEFICIOS -->
+<div class="col-12 mb-4">
+  <div class="card shadow-sm h-100">
+    <div class="card-header bg-secondary text-white">
+      <h5 class="mb-0">
+        <i class="bi bi-list-check me-2"></i>Lista de Beneficios
+      </h5>
+    </div>
 
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover text-center" id="tablaBeneficios">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Nombre</th>
+              <th>Descripción</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="listaBeneficios">
+            <!-- Aquí se cargarán los beneficios -->
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
+</div>
+
 
 
   
@@ -626,6 +636,36 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="modalConfirmCancel">Cancelar</button>
           <button type="button" class="btn btn-danger" id="modalConfirmOk">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal editar beneficio -->
+  <div class="modal fade" id="modalEditarBeneficio" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-secondary text-white">
+          <h5 class="modal-title">Editar Beneficio</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formEditarBeneficio">
+            <input type="hidden" id="editBeneficioId">
+            <div class="mb-3">
+              <label for="editBeneficioNombre" class="form-label">Nombre</label>
+              <input type="text" id="editBeneficioNombre" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label for="editBeneficioDescripcion" class="form-label">Descripción</label>
+              <textarea id="editBeneficioDescripcion" class="form-control" rows="3"></textarea>
+            </div>
+          </form>
+          <div id="mensajeEditarBeneficio" class="mt-2"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="btnGuardarBeneficio">Guardar</button>
         </div>
       </div>
     </div>

@@ -10,6 +10,13 @@ const transporter = nodemailer.createTransport({
     },
 });
 
+// Verificar conexión al servidor SMTP al cargar el módulo
+transporter.verify().then(() => {
+  console.log('[emailService] SMTP ready (transporter verified)')
+}).catch(err => {
+  console.warn('[emailService] SMTP verification failed:', err && err.message ? err.message : err)
+});
+
 /**
  * Función para enviar correos electrónicos
  * @param {Object} opciones - Opciones del correo
@@ -21,25 +28,65 @@ const transporter = nodemailer.createTransport({
  */
 const enviarCorreo = async ({ destinatario, asunto, mensaje, html }) => {
 	try {
-		const opciones = {
-			from: `"Sistema de Biblioteca" <${process.env.EMAIL_USER}>`,
-			to: destinatario,
-			subject: asunto,
-			text: mensaje,
-		};
+    // Helper: convertir HTML a texto plano básico conservando saltos de párrafo
+    const stripHtmlToText = (inputHtml) => {
+      if (!inputHtml) return '';
+      let t = inputHtml;
+      // reemplazar algunos contenedores por dobles CRLF para separar párrafos
+      t = t.replace(/<\s*br\s*\/?>/gi, '\r\n');
+      t = t.replace(/<\s*\/p\s*>/gi, '\r\n\r\n');
+      t = t.replace(/<\s*\/div\s*>/gi, '\r\n\r\n');
+      t = t.replace(/<\s*li\s*>/gi, '\r\n - ');
+      t = t.replace(/<[^>]+>/g, '');
+      // decode common entities
+      t = t.replace(/&nbsp;/g, ' ')
+           .replace(/&amp;/g, '&')
+           .replace(/&lt;/g, '<')
+           .replace(/&gt;/g, '>')
+           .replace(/&quot;/g, '"');
+      // normalize whitespace and CRLF
+      t = t.replace(/\r\n|\r|\n/g, '\r\n');
+      // remove markdown-style asterisks used for emphasis (e.g. *texto*)
+      t = t.replace(/\*(.*?)\*/g, '$1');
+      // collapse sequences of 3+ newlines into two (CRLF x2)
+      t = t.replace(/(\r\n){3,}/g, '\r\n\r\n');
+      // trim lines
+      t = t.split('\r\n').map(s => s.trim()).filter(Boolean).join('\r\n\r\n');
+      return t;
+    };
 
-		// Si se proporciona HTML, agregarlo
-		if (html) {
-			opciones.html = html;
-		}
+    // Generar texto plano: preferir 'mensaje' si se proporcionó, si no derivar del HTML
+    let textoPlano = '';
+    if (mensaje && mensaje.toString().trim()) {
+      textoPlano = mensaje.toString();
+    } else if (html) {
+      textoPlano = stripHtmlToText(html);
+    }
+    // Si el texto aún contiene asteriscos por otros motivos, limpiarlos
+    textoPlano = textoPlano.replace(/\*(.*?)\*/g, '$1');
 
-		const info = await transporter.sendMail(opciones);
-		console.log(' Correo enviado:', info.messageId);
-		return { success: true, messageId: info.messageId };
-	} catch (error) {
-		console.error(' Error al enviar correo:', error);
-		throw error;
-	}
+    const opciones = {
+      from: `"Sistema de Biblioteca" <${process.env.EMAIL_USER}>`,
+      to: destinatario,
+      subject: asunto,
+      text: textoPlano,
+    };
+
+    console.log('[emailService] enviarCorreo -> destinatario:', destinatario, 'asunto:', asunto);
+    console.log('[emailService] texto plano (preview):', (textoPlano || '').slice(0, 400).replace(/\r\n/g, '\\n'));
+
+    // Si se proporciona HTML, agregarlo (los clientes que soporten HTML lo usarán)
+    if (html) {
+      opciones.html = html;
+    }
+
+    const info = await transporter.sendMail(opciones);
+    console.log('[emailService] Correo enviado:', info && info.messageId ? info.messageId : info);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('[emailService] Error al enviar correo:', error && error.message ? error.message : error);
+    throw error;
+  }
 };
 
 /**
@@ -131,47 +178,55 @@ const plantillaMulta = async ({ nombreMiembro, tituloLibro, diasRetraso, montoMu
     <html>
     <head>
       <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #dc3545; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
-        .content { background-color: #f8f9fa; padding: 30px; border-radius: 0 0 5px 5px; }
-        .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #6c757d; }
-        .alert { background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; margin: 20px 0; }
-        .amount { font-size: 24px; color: #dc3545; font-weight: bold; text-align: center; margin: 20px 0; }
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f6f8; padding: 20px; }
+        .container { max-width: 640px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.06); }
+        .header { background-color: #c82333; color: white; padding: 18px 22px; text-align: left; }
+        .header h1 { margin: 0; font-size: 20px; }
+        .brand { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+        .content { padding: 22px; color: #333; }
+        .footer { text-align: center; padding: 16px 18px; font-size: 12px; color: #6c757d; background: #f8f9fa; }
+        .notice { background: #fff3f3; border-left: 4px solid #e55353; padding: 14px; margin: 14px 0; border-radius:4px; }
+        .amount { font-size: 22px; color: #c82333; font-weight: 700; text-align: center; margin: 14px 0; }
+        .details { background: #ffffff; border: 1px solid #eef0f2; padding: 12px; border-radius: 6px; }
+        .details b { display:inline-block; width:140px; }
+        ul { padding-left: 18px; }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
           <h1>⚠️ Aviso de Multa por Retraso</h1>
-          <div style="font-size:14px;margin-top:6px;opacity:0.95">${nombreInst}</div>
+          <div class="brand">${nombreInst}</div>
         </div>
         <div class="content">
           <p>Estimado/a <strong>${nombreMiembro}</strong>,</p>
-          
-          <p>Te informamos que tienes un préstamo vencido con días de retraso.</p>
-          
-          <div class="alert">
-            <strong>📖 Libro:</strong> ${tituloLibro}<br>
-            <strong>#️⃣ Préstamo:</strong> #P${String(idPrestamo).padStart(3, '0')}<br>
-            <strong>⏰ Días de retraso:</strong> ${diasRetraso} días
+
+          <p>Hemos detectado que uno de tus préstamos presenta retraso en la fecha de devolución. A continuación encontrarás los detalles y el monto generado.</p>
+
+          <div class="details">
+            <p><b>📖 Libro:</b> ${tituloLibro}</p>
+            <p><b>#️⃣ Préstamo:</b> #P${String(idPrestamo).padStart(3, '0')}</p>
+            <p><b>⏰ Días de retraso:</b> ${diasRetraso} días</p>
           </div>
-          
-          <p><strong>Se ha generado una multa por el retraso:</strong></p>
-          
-          <div class="amount">
-            💰 $${montoMulta.toFixed(2)}
-          </div>
-          
-          <p>Por favor, acércate a la biblioteca lo antes posible para:</p>
+
+          <h3 style="margin-top:14px; margin-bottom:8px;">Multa generada</h3>
+          <div class="amount">💰 $${montoMulta.toFixed(2)}</div>
+
+          <p>Por favor, acércate a la biblioteca para regularizar la situación. Opciones sugeridas:</p>
           <ul>
-            <li>Devolver el libro</li>
-            <li>Realizar el pago correspondiente de la multa</li>
+            <li>Devolver el libro en la biblioteca (Lun-Vie 9:00-17:00).</li>
+            <li>Realizar el pago correspondiente de la multa en caja o por los medios habilitados.</li>
           </ul>
-          
-          <p>Agradecemos tu comprensión y cooperación.</p>
-          
-          <p><em>${nombreInst}</em></p>
+
+          <div class="notice">
+            Si ya realizaste el pago, por favor responde a este correo indicando el número de préstamo y, si tienes, el comprobante.
+          </div>
+
+          <p>Contacto: ${telefonoInst ? telefonoInst : ''} ${correoInst ? ' • ' + correoInst : ''}</p>
+
+          <p>Gracias por tu atención.</p>
+
+          <p><em>${nombreInst}${direccionInst ? ' — ' + direccionInst : ''}</em></p>
         </div>
         <div class="footer">
           <p>Este es un mensaje automático, por favor no respondas a este correo.</p>

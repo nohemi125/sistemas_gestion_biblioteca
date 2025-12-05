@@ -107,6 +107,36 @@ async function enviarMulta(prestamo, miembro, monto_multa, options = {}) {
   });
 
   const customMensaje = options.mensaje || options.customMensaje || null;
+  // Obtener datos de la institución para incluirlos en el mensaje
+  let institucion = null;
+  try {
+    institucion = await perfilModel.obtenerInstitucion();
+  } catch (e) {
+    institucion = null;
+  }
+  const nombreInst = (institucion && (institucion.nombre || institucion.nombreInstitucion || institucion.nombrePlataforma)) || 'Biblioteca Municipal';
+  const telefonoInst = (institucion && (institucion.telefono || institucion.telefonoInstitucion || institucion.telefono_institucion)) || '';
+  const correoInst = (institucion && (institucion.smtp_correo || institucion.smtpCorreo || institucion.correo || institucion.email)) || '';
+  const direccionInst = (institucion && institucion.direccion) || '';
+
+  // Construir versión de texto plano más legible para clientes que no muestran HTML
+  const id = prestamo.id_prestamo || prestamo.id || '';
+  const plainTextParagraphs = [
+    `⚠️ Aviso de Multa por Retraso — ${nombreInst}`,
+    `Estimado/a ${prestamo.nombre_miembro},`,
+    `Hemos registrado un préstamo con retraso:`,
+    `Libro: ${prestamo.titulo_libro}${id ? `\nPréstamo: P${String(id).padStart(3, '0')}` : ''}\nDías de retraso: ${diasRetraso} día(s)`,
+    `Se ha generado una multa por el retraso:`,
+    `Monto: $${parseFloat(monto_multa).toFixed(2)}`,
+    `Para regularizar tu situación puedes:\n- Devolver el libro en la biblioteca (Lun-Vie 9:00-17:00)\n- Realizar el pago correspondiente de la multa.`,
+    `Si ya realizaste el pago, por favor indícanos el comprobante respondiendo con el número de préstamo.`,
+    `Contacto: ${telefonoInst ? telefonoInst : ''}${correoInst ? ' • ' + correoInst : ''}`,
+    `Gracias por tu atención.`,
+    `${nombreInst}${direccionInst ? ' — ' + direccionInst : ''}`
+  ].filter(Boolean);
+
+  // Usar CRLF doble entre párrafos para máxima compatibilidad en clientes de correo
+  const plainText = plainTextParagraphs.join('\r\n\r\n');
 
   // Determinar canales solicitados
   let via = (options.via || '').toString().toLowerCase();

@@ -1,12 +1,22 @@
-const express = require('express')
-const router = express.Router()
-const checkAuth = require('../middlewares/checkAuth')
-const { listarMiembros } = require('../controllers/beneficios')
+const express = require('express');
+const router = express.Router();
 
-// Todas las rutas requieren autenticación
-router.use(checkAuth)
+// Importar controlador
+const {
+  obtenerBeneficios,
+  obtenerBeneficioPorId,
+  crearBeneficio,
+  actualizarBeneficio,
+  eliminarBeneficio
+} = require('../controllers/beneficios');
 
-// GET /api/beneficios/miembros?min=4&dias=30
-router.get('/miembros', listarMiembros)
+// RUTAS CRUD
+router.get('/', obtenerBeneficios);            // Listar todos los beneficios
+router.get('/miembros', require('../controllers/beneficios').obtenerMiembrosParaBeneficios); // Miembros elegibles para beneficios
+router.get('/:id', obtenerBeneficioPorId);     // Obtener uno por ID
+router.post('/', crearBeneficio);              // Crear nuevo beneficio
+router.post('/asignar', require('../controllers/beneficios').asignarBeneficio); // Asignar beneficio y notificar
+router.put('/:id', actualizarBeneficio);       // Actualizar beneficio
+router.delete('/:id', eliminarBeneficio);      // Eliminar beneficio
 
-module.exports = router
+module.exports = router;
