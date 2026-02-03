@@ -93,9 +93,55 @@ const librosPorCategoria = async (req, res) => {
     }
 };
 
+// GET /api/dashboard/prestamos-por-mes
+const prestamosPorMes = async (req, res) => {
+    try {
+        const [rows] = await db.query(
+            `SELECT 
+                MONTH(fecha_prestamo) AS mes,
+                COUNT(*) AS realizados
+             FROM prestamos
+             WHERE YEAR(fecha_prestamo) = YEAR(CURDATE())
+             GROUP BY MONTH(fecha_prestamo)
+             ORDER BY mes`
+        );
+
+        // Crear array con todos los meses (0 para meses sin datos)
+        const dataPorMes = Array(12).fill(0);
+        for (const row of rows) {
+            dataPorMes[row.mes - 1] = row.realizados;
+        }
+
+        // También obtener préstamos devueltos
+        const [rowsDevueltos] = await db.query(
+            `SELECT 
+                MONTH(fecha_devolucion) AS mes,
+                COUNT(*) AS devueltos
+             FROM prestamos
+             WHERE YEAR(fecha_devolucion) = YEAR(CURDATE())
+             GROUP BY MONTH(fecha_devolucion)
+             ORDER BY mes`
+        );
+
+        const dataDevueltosPorMes = Array(12).fill(0);
+        for (const row of rowsDevueltos) {
+            dataDevueltosPorMes[row.mes - 1] = row.devueltos;
+        }
+
+        return res.json({
+            realizados: dataPorMes,
+            devueltos: dataDevueltosPorMes
+        });
+    } catch (err) {
+        console.error('Error en controller.dashboard.prestamosPorMes:', err);
+        res.status(500).json({ error: 'Error al obtener préstamos por mes.' });
+    }
+};
+
 module.exports = {
     multasEstadisticas,
     multasHistorial,
     resumen,
-    librosPorCategoria
+    librosPorCategoria,
+    prestamosPorMes
 };

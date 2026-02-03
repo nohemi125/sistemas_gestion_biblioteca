@@ -1,3 +1,7 @@
+// Variables globales para los gráficos
+let graficoPrestamosMes = null
+let graficoPrestamosCategoria = null
+
 // Actualizar fecha y hora en tiempo real
 function actualizarFechaHora() {
   const ahora = new Date()
@@ -121,89 +125,113 @@ const colores = {
   orange: "#fd7e14",
 }
 
-// Gráfico de Préstamos por Mes (Barras)
-const ctxMes = document.getElementById("graficoPrestamosMes").getContext("2d")
-const graficoPrestamosMes = new Chart(ctxMes, {
-  type: "bar",
-  data: {
-    labels: ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"],
-    datasets: [
-      {
-        label: "Préstamos Realizados",
-        data: [120, 150, 180, 140, 190, 220, 210, 230, 250, 270, 260, 280],
-        backgroundColor: colores.primary,
-        borderColor: colores.secondary,
-        borderWidth: 2,
-        borderRadius: 8,
-        hoverBackgroundColor: colores.secondary,
-      },
-      {
-        label: "Préstamos Devueltos",
-        data: [110, 140, 170, 130, 180, 210, 200, 220, 240, 260, 250, 270],
-        backgroundColor: colores.success,
-        borderColor: colores.success,
-        borderWidth: 2,
-        borderRadius: 8,
-        hoverBackgroundColor: "#218838",
-      },
-    ],
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: true,
-    plugins: {
-      legend: {
-        display: true,
-        position: "top",
-        labels: {
-          font: {
-            size: 12,
-            weight: "bold",
+// Cargar datos reales de préstamos por mes
+async function cargarPrestamosPorMes() {
+  try {
+    const response = await fetch('/api/dashboard/prestamos-mes', {
+      credentials: 'include'
+    })
+    
+    if (!response.ok) {
+      console.error('Error al cargar préstamos por mes:', response.status)
+      return
+    }
+    
+    const datos = await response.json()
+    console.log('Datos de préstamos por mes:', datos);
+    
+    const ctxMes = document.getElementById("graficoPrestamosMes").getContext("2d")
+    
+    // Destruir gráfico anterior si existe
+    if (graficoPrestamosMes) {
+      graficoPrestamosMes.destroy()
+    }
+    
+    graficoPrestamosMes = new Chart(ctxMes, {
+      type: "bar",
+      data: {
+        labels: ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"],
+        datasets: [
+          {
+            label: "Préstamos Realizados",
+            data: datos.realizados,
+            backgroundColor: colores.primary,
+            borderColor: colores.secondary,
+            borderWidth: 2,
+            borderRadius: 8,
+            hoverBackgroundColor: colores.secondary,
           },
-          padding: 15,
-        },
+          {
+            label: "Préstamos Devueltos",
+            data: datos.devueltos,
+            backgroundColor: colores.success,
+            borderColor: colores.success,
+            borderWidth: 2,
+            borderRadius: 8,
+            hoverBackgroundColor: "#218838",
+          },
+        ],
       },
-      tooltip: {
-        backgroundColor: "rgba(0, 0, 0, 0.8)",
-        padding: 12,
-        titleFont: {
-          size: 14,
-          weight: "bold",
-        },
-        bodyFont: {
-          size: 13,
-        },
-        cornerRadius: 8,
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          font: {
-            size: 11,
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            display: true,
+            position: "top",
+            labels: {
+              font: {
+                size: 12,
+                weight: "bold",
+              },
+              padding: 15,
+            },
+          },
+          tooltip: {
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            padding: 12,
+            titleFont: {
+              size: 14,
+              weight: "bold",
+            },
+            bodyFont: {
+              size: 13,
+            },
+            cornerRadius: 8,
           },
         },
-        grid: {
-          color: "rgba(0, 0, 0, 0.05)",
-        },
-      },
-      x: {
-        ticks: {
-          font: {
-            size: 11,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              font: {
+                size: 11,
+              },
+            },
+            grid: {
+              color: "rgba(0, 0, 0, 0.05)",
+            },
+          },
+          x: {
+            ticks: {
+              font: {
+                size: 11,
+              },
+            },
+            grid: {
+              display: false,
+            },
           },
         },
-        grid: {
-          display: false,
-        },
       },
-    },
-  },
-})
+    })
+  } catch (error) {
+    console.error('Error cargando préstamos por mes:', error)
+  }
+}
 
-// Variable global para el gráfico de categorías
-let graficoPrestamosCategoria = null
+// Cargar datos reales de préstamos por mes al iniciar
+cargarPrestamosPorMes()
 
 // Cargar datos reales de libros por categoría
 async function cargarLibrosPorCategoria() {

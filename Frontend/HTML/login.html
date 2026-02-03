@@ -67,9 +67,7 @@
 
         <h3 id="tituloLogin" class="left-title">Welcome to...</h3>
 
-        <p class="left-text"  id="esloganLogin">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-        </p>
+        <p class="left-text"  id="esloganLogin"> </p>
     </div>
 
     <!-- PANEL DERECHO -->
@@ -94,16 +92,50 @@
                     <div class="input-group">
                         <span class="input-icon"><i class="bi bi-lock-fill"></i></span>
                         <input type="password" id="contrasena" class="form-control" placeholder="Ingrese su contraseña" required>
-                    </div>
+                           <span class="toggle-pass">
+                                <i class="bi bi-eye-fill" id="iconoContrasena"></i>
+                            </span>
+                      </div>
                 </div>
 
                 <button type="submit" class="btn-login w-100">Ingresar</button>
             </form>
+            <div class="text-center mt-2">
+                <a href="#" id="olvideContrasena" class="text-decoration-none">
+                    ¿Olvidaste tu contraseña?
+                </a>
+            </div>
+
 
             <div id="mensaje" class="mt-3 text-center fw-semibold"></div>
         </div>
     </div>
 
+</div>
+
+<!-- MODAL DE RECUPERACIÓN DE CONTRASEÑA -->
+<div id="modalRecuperacion" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Recuperar Contraseña</h3>
+            <button type="button" class="btn-close" id="cerrarModal">&times;</button>
+        </div>
+
+        <form id="formRecuperacion">
+            <div class="mb-3">
+                <label for="usuarioRecuperacion" class="form-label">Usuario</label>
+                <div class="input-group">
+                    <span class="input-icon"><i class="bi bi-person-fill"></i></span>
+                    <input type="text" id="usuarioRecuperacion" class="form-control" placeholder="Ingrese su usuario" required>
+                </div>
+                <small class="d-block mt-2 text-muted">Enviaremos una contraseña temporal al correo asociado</small>
+            </div>
+
+            <button type="submit" class="btn-login w-100">Enviar Contraseña</button>
+        </form>
+
+        <div id="mensajeRecuperacion" class="mt-3 text-center fw-semibold"></div>
+    </div>
 </div>
 
 

@@ -215,3 +215,139 @@ body {
   align-items: center;
   padding: 0;
 }
+
+/* Botón de mostrar contraseña */
+.toggle-pass {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #6c757d;
+    font-size: 18px;
+}
+
+.toggle-pass:hover {
+    color: #000;
+}
+
+/* MODAL DE RECUPERACIÓN DE CONTRASEÑA */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 1rem;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #212529;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.btn-close:hover {
+  color: #000;
+}
+
+#formRecuperacion .form-label {
+  color: #212529;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+#formRecuperacion .input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+#formRecuperacion .input-icon {
+  position: absolute;
+  left: 12px;
+  color: #023e8a;
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+#formRecuperacion .form-control {
+  padding-left: 35px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+#formRecuperacion .form-control:focus {
+  border-color: #023e8a;
+  box-shadow: 0 0 0 3px rgba(2, 62, 138, 0.1);
+  outline: none;
+}
+
+#mensajeRecuperacion {
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+#mensajeRecuperacion.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+#mensajeRecuperacion.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+

@@ -29,8 +29,23 @@ const obtenerLibroPorId = async (req, res) => {
 
 const crearLibro = async (req, res) => {
   try {
-    const nuevoLibro = await Libro.crear(req.body);
-    res.json(nuevoLibro);
+    const resultado = await Libro.crear(req.body);
+    
+    // Si se actualizó un libro existente
+    if (resultado.mensaje) {
+      return res.json({
+        success: true,
+        mensaje: `El libro ya existe. Se agregaron ${resultado.cantidadAgregada} unidades. Total: ${resultado.cantidadTotal}`,
+        libro: resultado
+      });
+    }
+    
+    // Si se creó un libro nuevo
+    res.json({
+      success: true,
+      mensaje: 'Libro creado correctamente',
+      libro: resultado
+    });
   } catch (error) {
     console.error("Error al crear libro:", error);
     res.status(500).json({ error: "Error al crear el libro" });

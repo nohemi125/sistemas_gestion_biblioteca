@@ -95,5 +95,86 @@ async function cargarLoginInfo() {
   }
 }
 
+// FUCTION PARA  VISIBILIDAD DE CONTRASEÑA
+const inputPass = document.getElementById("contrasena");
+const iconoPass = document.getElementById("iconoContrasena");
+
+iconoPass.addEventListener("click", () => {
+    if (inputPass.type === "password") {
+        inputPass.type = "text";
+        iconoPass.classList.remove("bi-eye-fill");
+        iconoPass.classList.add("bi-eye-slash-fill");
+    } else {
+        inputPass.type = "password";
+        iconoPass.classList.remove("bi-eye-slash-fill");
+        iconoPass.classList.add("bi-eye-fill");
+    }
+});
+
+// MODAL DE RECUPERACIÓN DE CONTRASEÑA
+const modalRecuperacion = document.getElementById("modalRecuperacion");
+const btnOlvideContrasena = document.getElementById("olvideContrasena");
+const btnCerrarModal = document.getElementById("cerrarModal");
+const formRecuperacion = document.getElementById("formRecuperacion");
+const mensajeRecuperacion = document.getElementById("mensajeRecuperacion");
+
+// Abrir modal
+btnOlvideContrasena.addEventListener("click", (e) => {
+  e.preventDefault();
+  modalRecuperacion.style.display = "flex";
+  formRecuperacion.reset();
+  mensajeRecuperacion.textContent = "";
+});
+
+// Cerrar modal
+btnCerrarModal.addEventListener("click", () => {
+  modalRecuperacion.style.display = "none";
+});
+
+// Cerrar modal al hacer click fuera
+modalRecuperacion.addEventListener("click", (e) => {
+  if (e.target === modalRecuperacion) {
+    modalRecuperacion.style.display = "none";
+  }
+});
+
+// Enviar formulario de recuperación
+formRecuperacion.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const usuario = document.getElementById("usuarioRecuperacion").value.trim();
+
+  try {
+    const response = await fetch("/api/auth/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ correo: usuario }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      mensajeRecuperacion.classList.remove("error");
+      mensajeRecuperacion.classList.add("success");
+      mensajeRecuperacion.textContent = "✓ " + (data.mensaje || "Contraseña temporal enviada a tu correo");
+      
+      setTimeout(() => {
+        modalRecuperacion.style.display = "none";
+        formRecuperacion.reset();
+      }, 2000);
+    } else {
+      mensajeRecuperacion.classList.remove("success");
+      mensajeRecuperacion.classList.add("error");
+      mensajeRecuperacion.textContent = "✗ " + (data.mensaje || "Error al procesar la solicitud");
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    mensajeRecuperacion.classList.remove("success");
+    mensajeRecuperacion.classList.add("error");
+    mensajeRecuperacion.textContent = "✗ Error en el servidor";
+  }
+});
+
+
 cargarLoginInfo();
 

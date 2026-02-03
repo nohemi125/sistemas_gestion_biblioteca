@@ -2,9 +2,9 @@
 
 /* Variables de colores */
 :root {
-  --color-primario: #003049;
-  --color-secundario: #023e8a;
-  --color-acento: #669bbc;
+  --colorPrimario: #003049;
+  --colorSecundario: #023e8a;
+ --colorAcento: #669bbc;
   --color-texto: #212529;
   --color-fondo: #f8f9fa;
 }

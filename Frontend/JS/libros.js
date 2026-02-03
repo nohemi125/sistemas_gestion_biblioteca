@@ -39,11 +39,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let valido = true;
 
-        // Validar título
-        if (!titulo || !/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(titulo)) {
-          document.getElementById("errorTitulo").textContent = "Título inválido. Solo letras y espacios.";
-          valido = false;
+       // Validar título
+        if (!titulo || !/^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s.,:;!?'\-]+$/.test(titulo)) {
+            document.getElementById("errorTitulo").textContent =
+              "Título inválido. Solo se permiten letras, números y símbolos comunes (, . : ; ! ? - ').";
+            valido = false;
         }
+
 
         // Validar autor
         if (!autor || !/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(autor)) {
@@ -52,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Validar ISBN
-        if (!/^\d{10}$/.test(isbn)) {
+        if (!/^\d{13}$/.test(isbn)) {
           document.getElementById("errorIsbn").textContent = "El ISBN debe tener exactamente 10 números.";
           valido = false;
         }
@@ -85,9 +87,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
  
     if (response.ok) {
+  // Usar el mensaje que viene del servidor
+  const mensaje = data.mensaje || (libroEditandoId ? "Libro editado correctamente" : "Libro agregado correctamente");
+  
   mostrarModalMensaje(
     "Éxito",
-    libroEditandoId ? "Libro editado correctamente" : "Libro agregado correctamente",
+    mensaje,
     "success"
   );
   form.reset();

@@ -133,7 +133,8 @@ exports.asignarBeneficio = async (req, res) => {
     // Construir cuerpo del mensaje
     const titulo = beneficio.nombre || '';
     const descripcion = beneficio.descripcion || '';
-    const texto = mensaje && mensaje.trim() !== '' ? mensaje : `🎉¡Felicidades ${miembro.nombres || ''} ${miembro.apellidos || ''}!\n\nHas sido seleccionado/a para recibir un beneficio especial por tu participación.\n\n*${titulo}*\n${descripcion}\n\n¡Gracias por ser parte de nuestra comunidad!`;
+    const nombreCompleto = `${miembro.nombres || ''} ${miembro.apellidos || ''}`.trim();
+    const texto = mensaje && mensaje.trim() !== '' ? mensaje : `🎉¡Felicidades ${nombreCompleto}!\n\nHas sido seleccionado/a para recibir un beneficio especial por tu participación.\n\n*${titulo}*\n${descripcion}\n\n¡Gracias por ser parte de nuestra comunidad!`;
 
     const resultados = { email: 'no_solicitado', whatsapp: 'no_solicitado' };
 
@@ -152,11 +153,18 @@ exports.asignarBeneficio = async (req, res) => {
     if (miembro.email && debeIntentar('email')) {
       try {
         console.log('[beneficios.asignarBeneficio] intentando enviar email a', miembro.email)
+        // Generar plantilla HTML para beneficio
+        const htmlContent = await emailService.plantillaBeneficio({
+          nombreMiembro: nombreCompleto,
+          tituloBeneficio: titulo,
+          descripcionBeneficio: descripcion
+        });
+        
         await emailService.enviarCorreo({
           destinatario: miembro.email,
           asunto: `🎁 Has recibido un beneficio: ${titulo}`,
           mensaje: texto,
-          html: `<p>${String(texto).replace(/\n/g, '<br>')}</p>`
+          html: htmlContent
         });
         resultados.email = 'enviado';
         console.log('[beneficios.asignarBeneficio] email enviado a', miembro.email)

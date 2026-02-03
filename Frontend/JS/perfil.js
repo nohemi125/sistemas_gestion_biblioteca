@@ -808,6 +808,47 @@ formSMTP.addEventListener("submit", async (e) => {
 
 
 
+// Variable para controlar el polling de estado de WhatsApp
+let whatsappPollingInterval = null;
+
+// Iniciar polling para verificar el estado de conexión de WhatsApp
+function iniciarPollingWhatsApp() {
+  // Limpiar cualquier polling anterior
+  detenerPollingWhatsApp();
+  
+  // Verificar cada 3 segundos si se conectó
+  whatsappPollingInterval = setInterval(async () => {
+    try {
+      const res = await fetch('/api/wpp/status');
+      const json = await res.json();
+      if (json && json.ok && json.data && json.data.connected) {
+        // WhatsApp se conectó, actualizar UI
+        updateWhatsAppBadge(true);
+        // Ocultar el QR y mostrar mensaje de éxito
+        const qrContainer = document.getElementById('qrContainer');
+        const qrStatus = document.getElementById('qrStatus');
+        if (qrContainer) qrContainer.style.display = 'none';
+        if (qrStatus) {
+          qrStatus.innerHTML = `<div class="alert alert-success mb-0"><i class="bi bi-check-circle me-2"></i>¡WhatsApp conectado exitosamente!</div>`;
+          setTimeout(() => { try { if (qrStatus) qrStatus.innerHTML = ''; } catch(e){} }, 5000);
+        }
+        // Detener el polling una vez conectado
+        detenerPollingWhatsApp();
+      }
+    } catch (e) {
+      console.warn('Error en polling de WhatsApp:', e);
+    }
+  }, 3000);
+}
+
+// Detener el polling de WhatsApp
+function detenerPollingWhatsApp() {
+  if (whatsappPollingInterval) {
+    clearInterval(whatsappPollingInterval);
+    whatsappPollingInterval = null;
+  }
+}
+
 // FUNCION PARA MOSTRRAR EL CODIGO QR DE WHATSAPP
 async function mostrarQR() {
   const btn = document.getElementById('btnGenerarQR');
@@ -839,6 +880,9 @@ async function mostrarQR() {
       try { updateWhatsAppBadge(false); } catch(e){}
       if (loading) { loading.classList.add('d-none'); loading.setAttribute('aria-hidden', 'true'); }
       if (qrImageWrap) qrImageWrap.style.display = 'block';
+      
+      // Iniciar polling para detectar cuando se conecte
+      iniciarPollingWhatsApp();
     } else {
       // If backend indicates the service is already connected, show message in both places
       const connected = data && (data.connected === true || /conectad/i.test(String(data.message || '')));
@@ -872,6 +916,9 @@ async function mostrarQR() {
 // Desconectar la sesión de WhatsApp en el servidor y solicitar nuevo QR
 async function desconectarWhatsApp() {
   try {
+    // Detener polling si está activo
+    detenerPollingWhatsApp();
+    
     // Usar modal de confirmación en lugar de confirm()
     const confirmed = await showConfirm('Confirmar desconexión', '¿Deseas desconectar WhatsApp?', 'Desconectar', 'Cancelar', 'danger');
     if (!confirmed) return;

@@ -15,6 +15,33 @@ async obtenerPorId(id) {
   async crear(datos) {
     const { titulo, autor, isbn, imagen, categoria, cantidad, estado } = datos;
 
+    // Verificar si ya existe un libro con el mismo ISBN
+    const [librosExistentes] = await db.query(
+      'SELECT id_libro, cantidad FROM libros WHERE isbn = ?',
+      [isbn]
+    );
+
+    // Si el libro ya existe, sumar la cantidad
+    if (librosExistentes.length > 0) {
+      const libroExistente = librosExistentes[0];
+      const nuevaCantidad = Number(libroExistente.cantidad) + Number(cantidad);
+      const nuevoEstado = nuevaCantidad > 0 ? 'Disponible' : 'Agotado';
+
+      await db.query(
+        'UPDATE libros SET cantidad = ?, estado = ? WHERE id_libro = ?',
+        [nuevaCantidad, nuevoEstado, libroExistente.id_libro]
+      );
+
+      return { 
+        id: libroExistente.id_libro, 
+        mensaje: 'Cantidad actualizada en libro existente',
+        cantidadAnterior: libroExistente.cantidad,
+        cantidadAgregada: cantidad,
+        cantidadTotal: nuevaCantidad
+      };
+    }
+
+    // Si no existe, crear el libro nuevo
     const [result] = await db.query(
       `INSERT INTO libros (titulo, autor, isbn, imagen, categoria, cantidad, estado)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,

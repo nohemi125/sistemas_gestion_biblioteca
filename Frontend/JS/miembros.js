@@ -49,11 +49,12 @@ document.addEventListener("DOMContentLoaded", () => {
     let valido = true;
 
     //validar Identificación
-    if (!/^\d{10}$/.test(nuevoMiembro.id)) {
+    if (!/^\d{8,10}$/.test(nuevoMiembro.id)) {
       const el = document.getElementById("errorId");
-      if (el) el.textContent = "El Id debe tener 10 dígitos.";
+      if (el) el.textContent = "El Id debe tener entre 8 y 10 dígitos.";
       valido = false;
     }
+
 
     // Validar nombres
     if (!nuevoMiembro.nombres || !/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/.test(nuevoMiembro.nombres)) {
