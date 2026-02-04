@@ -123,7 +123,7 @@ body {
 
 /* Navbar superior */
 .navbar-top {
-  background: linear-gradient(135deg, var(--color-primario) 0%, var(--color-secundario) 100%);
+  background: var(--color-primario);
   color: white;
   position: sticky;
   top: 0;
@@ -155,24 +155,42 @@ body {
   padding: 1rem 1.5rem;
 }
 
+.card-header.bg-primary {
+  background-color: var(--colorSecundario) !important;
+  color: #fff !important;
+}
+
 .bg-primary-gradient {
-  background: linear-gradient(135deg, var(--color-primario) 0%, var(--color-secundario) 100%);
+  background-color: var(--colorSecundario);
 }
 
 .bg-secondary-gradient {
-  background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
+  /* background: linear-gradient(135deg, #495057 0%, #6c757d 100%); */
+    background-color: var(--colorSecundario);
+
 }
 
 .bg-warning-gradient {
-  background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+  background-color: var(--colorPrimario);
+  color: #fff !important;
 }
 
+.card-header.bg-success {
+  background-color: var(--colorSecundario) !important;
+  color: #fff !important;
+}
+
+
 .bg-info-gradient {
-  background: linear-gradient(135deg, #0dcaf0 0%, #0891b2 100%);
+  /* background: linear-gradient(135deg, #0dcaf0 0%, #0891b2 100%); */
+    background-color: var(--colorSecundario);
+
 }
 
 .bg-success-gradient {
-  background: linear-gradient(135deg, #198754 0%, #0d6832 100%);
+  /* background: linear-gradient(135deg, #198754 0%, #0d6832 100%); */
+    background-color: var(--colorSecundario);
+
 }
 
 /* Logo preview */
@@ -224,7 +242,7 @@ body {
 
 /* Campos de formulario */
 .form-label {
-  color: var(--color-primario);
+  color: black;
   margin-bottom: 0.5rem;
 }
 
@@ -251,7 +269,8 @@ body {
 }
 
 .btn-success {
-  background-color: #198754;
+  /* background-color: #198754; */
+  background-color: var(--colorPrimario);
   border: none;
 }
 
@@ -262,30 +281,37 @@ body {
 }
 
 .btn-primary {
-  background-color: var(--color-primario);
+  /* background-color: var(--color-primario); */
+  /* background-color: #495057; */
+    background-color: var(--colorSecundario);
+
   border: none;
 }
 
 .btn-primary:hover {
-  background-color: var(--color-secundario);
+  background-color: #343a40;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 48, 73, 0.4);
 }
 
 .btn-warning {
-  background-color: #ffc107;
+  background-color: var(--colorPrimario);
   border: none;
-  color: #212529;
+  color: #fff;
 }
 
 .btn-warning:hover {
-  background-color: #ffb300;
+  background-color: #00243a;
+  color: #fff;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 48, 73, 0.2);
 }
 
 .btn-info {
   background-color: #0dcaf0;
+    /* background-color: var(--color-acento); */
+  /* background-color: var(--colorPrimario); */
+
   border: none;
 }
 

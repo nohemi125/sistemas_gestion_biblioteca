@@ -223,17 +223,14 @@ document.getElementById("formInstitucion").addEventListener("submit", async (e) 
 
   const data = await res.json();
   console.log("Respuesta del servidor:", data);
-  // Mostrar resultado en modal en lugar de alert (usa la función global `showModalMessage`)
-
+  // Mostrar resultado en el div de mensajeInstitucion
+  const mensajeDiv = document.getElementById('mensajeInstitucion');
   if (res.ok) {
-    // backend devuelve 
     const saved = data.data || null;
     if (saved) {
-      // actualizar vista previa con los datos guardados
       document.getElementById("previewNombreInstitucion").textContent = saved.nombre || document.getElementById("previewNombreInstitucion").textContent;
       document.getElementById("previewNombrePlataforma").textContent = saved.plataforma || document.getElementById("previewNombrePlataforma").textContent;
       document.getElementById("previewEslogan").textContent = saved.eslogan || document.getElementById("previewEslogan").textContent;
-      // teléfono y dirección
       const telEl = document.getElementById('previewTelefono');
       const dirEl = document.getElementById('previewDireccion');
       if (telEl) telEl.querySelector('span').textContent = saved.telefono || document.getElementById('telefonoInstitucion').value || 'Teléfono no definido';
@@ -251,16 +248,20 @@ document.getElementById("formInstitucion").addEventListener("submit", async (e) 
         if (lp) lp.src = logoPath;
         if (lps) lps.src = logoPath;
       }
-      // si el backend devolvió correo, actualizar el campo smtpCorreo
       try {
         const smtpField = document.getElementById('smtpCorreo');
         if (smtpField) smtpField.value = saved.correo || document.getElementById('smtpCorreo').value || '';
       } catch (e) {}
     }
-
-    showModalMessage('Éxito', data.mensaje || 'Guardado correctamente', 'success');
+    if (mensajeDiv) {
+      mensajeDiv.innerHTML = `<div class="alert alert-success"><i class="bi bi-check-circle me-2"></i>Guardado correctamente</div>`;
+      setTimeout(() => { mensajeDiv.innerHTML = ''; }, 6000);
+    }
   } else {
-    showModalMessage('Error', (data && data.mensaje) || 'Error guardando', 'danger');
+    if (mensajeDiv) {
+      mensajeDiv.innerHTML = `<div class="alert alert-danger"><i class="bi bi-exclamation-circle me-2"></i>Error guardando</div>`;
+      setTimeout(() => { mensajeDiv.innerHTML = ''; }, 6000);
+    }
   }
 });
 

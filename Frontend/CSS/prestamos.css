@@ -141,7 +141,8 @@ body {
 
 /* Navbar único que combina búsqueda, filtros y botones */
 .navbar-custom {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  /* background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%); */
+  background-color: var(--color-primary);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 1.5rem 1.5rem;
 }
@@ -194,7 +195,8 @@ body {
 
 /* Botones principales */
 .btn-nuevo-prestamo {
-  background: var(--color-accent);
+  /* background: var(--color-accent); */
+   background: var(--color-secondary);
   color: white;
   border: none;
   padding: 10px 24px;
@@ -303,7 +305,8 @@ body {
 }
 
 .table thead.table-dark {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  /* background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%); */
+  background-color: var(--color-secondary);
   color: white;
 }
 
@@ -382,7 +385,8 @@ body {
 
 /* Botón de acciones */
 .btn-action {
-  background: var(--color-accent);
+  /* background: var(--color-accent); */
+  background-color: var(--color-secondary);
   color: white;
   border: none;
   border-radius: 6px;
@@ -391,7 +395,7 @@ body {
 }
 
 .btn-action:hover {
-  background: var(--color-secondary);
+  background: var(--color-primary);
   color: white;
 }
 
@@ -412,9 +416,9 @@ body {
   color: white;
 }
 
-.dropdown-item.text-danger:hover {
-  background: var(--color-danger);
-  color: white;
+.dropdown-item.text-danger:hover, .dropdown-item.btn-multa:hover {
+  background: var(--color-danger) !important;
+  color: #fff !important;
 }
 
 /* Modal headers con gradiente */

@@ -170,9 +170,11 @@
                     </div>
 
 
-                    <button type="submit" class="btn btn-success">
+                    <button type="submit" class="btn btn-primary">
                       <i class="bi bi-check-circle me-2"></i>Guardar Información
                     </button>
+                    <!-- Contenedor para mensajes del formulario de información de la institución -->
+                    <div id="mensajeInstitucion" class="mt-3"></div>
                   </div>
 
                 </div>
@@ -256,6 +258,8 @@
 
                 </div>
               </form>
+              <!-- Contenedor para mensajes del formulario de personalización -->
+              <div id="mensajePersonalizacion" class="mt-3"></div>
             </div>
           </div>
         </div>
@@ -681,5 +685,8 @@
   <!-- Toast container para notificaciones visibles al usuario -->
   <div id="toastContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 2000;"></div>
 
+  <!-- Scripts de personalización -->
+  <script src="JS/aplicarTema.js"></script>
+  <script src="JS/personalizacion.js"></script>
 </body>
 </html>

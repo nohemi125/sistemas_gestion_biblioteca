@@ -1,9 +1,139 @@
-/* Frontend/CSS/variables.css */
+/* Botón personalizado para acciones/acento */
+.btn-acento {
+  background-color: var(--color-acento) !important;
+  border-color: var(--color-acento) !important;
+  color: #fff !important;
+}
+.btn-acento:hover, .btn-acento:focus {
+  background-color: color-mix(in srgb, var(--color-acento) 90%, #000 10%) !important;
+  border-color: color-mix(in srgb, var(--color-acento) 90%, #000 10%) !important;
+  color: #fff !important;
+}
+/* Personalización de botones de acciones para usar color secundario */
+.btn-primary, .btn-info {
+  background-color: var(--color-primario) !important;
+  border-color: var(--color-primario) !important;
+  color: #fff !important;
+}
+
+.btn-primary:hover, .btn-primary:focus, .btn-info:hover, .btn-info:focus {
+  background-color: color-mix(in srgb, var(--color-primario) 90%, #000 10%) !important;
+  border-color: color-mix(in srgb, var(--color-primario) 90%, #000 10%) !important;
+  color: #fff !important;
+}
+
+.btn-secondary {
+  background-color: var(--color-secundario) !important;
+  border-color: var(--color-secundario) !important;
+  color: #fff !important;
+}
+.btn-secondary:hover, .btn-secondary:focus {
+  background-color: color-mix(in srgb, var(--color-secundario) 90%, #000 10%) !important;
+  border-color: color-mix(in srgb, var(--color-secundario) 90%, #000 10%) !important;
+  color: #fff !important;
+}
+
+/* Botón de multa: asegurar contraste de texto en btn-success */
+.btn-success {
+  color: #fff !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+/* Personalización de la barra lateral para usar el color primario */
+.sidebar {
+  background-color: var(--color-primario) !important;
+}
+/* Personalización de tablas para usar el color secundario */
+.table thead, .table-dark thead, .table thead tr, .table-dark {
+  background-color: var(--color-secundario) !important;
+  color: #fff !important;
+}
+
+.table thead th, .table-dark thead th {
+  background-color: var(--color-secundario) !important;
+  color: #fff !important;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+  background-color: color-mix(in srgb, var(--color-secundario) 10%, #fff 90%) !important;
+}
+
+.table-striped > tbody > tr:nth-of-type(even) {
+  background-color: #fff !important;
+}
+/* Personalización global de Bootstrap para que .btn-primary use el color primario personalizado */
+.btn-primary {
+  background-color: var(--color-primario) !important;
+  border-color: var(--color-primario) !important;
+  color: #fff !important;
+}
+
+.btn-primary:hover, .btn-primary:focus {
+  background-color: color-mix(in srgb, var(--color-primario) 90%, #000 10%) !important;
+  border-color: color-mix(in srgb, var(--color-primario) 90%, #000 10%) !important;
+  color: #fff !important;
+}
+/* ==========================================
+   VARIABLES GLOBALES - PERSONALIZACIÓN DE COLORES
+   ========================================== */
+
 :root {
-  --bg: #ffffff;
-  --primario:#003049;
-  --secuendario: #023e8a;
-    --acento: #669bbc;
-  --shadow: rgba(0,0,0,0.06);
+  /* ---- COLORES PRIMARIOS ---- */
+  --color-primario: #003049;
+  --color-secundario: #023e8a;
+  --color-acento: #669bbc;
+  
+  /* ---- COLORES DE ESTADO ---- */
+  --color-success: #28a745;
+  --color-warning: #ffc107;
+  --color-danger: #dc3545;
+  
+  /* ---- COLORES NEUTROS ---- */
+  --color-light: #f8f9fa;
+  --color-dark: #212529;
+  --color-texto: #212529;
+  --color-fondo: #ffffff;
+  
+  /* ---- COLORES DE FONDO ---- */
+  --bg-body: #f8f9fa;
+  --bg-card: #ffffff;
+  --bg-sidebar: #212529;
+  --bg-navbar: #2c3e50;
+  
+  /* ---- EFECTOS Y SOMBRAS ---- */
+  --shadow: rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.3);
+  
+  /* ---- ESPACIADO ---- */
+  --sidebar-width: 260px;
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  
+  /* ---- BORDES Y ESQUINAS ---- */
+  --border-radius-sm: 0.25rem;
+  --border-radius-md: 0.5rem;
+  --border-radius-lg: 12px;
+  
+  /* ---- TRANSICIONES ---- */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+}
+
+/* ---- ALIASES PARA COMPATIBILIDAD ---- */
+:root {
+  --colorPrimario: var(--color-primario);
+  --colorSecundario: var(--color-secundario);
+  --colorAcento: var(--color-acento);
+  --color-primary: var(--color-primario);
+  --color-secondary: var(--color-secundario);
+  --color-accent: var(--color-acento);
+  --bg: var(--color-fondo);
+  --primario: var(--color-primario);
+  --secuendario: var(--color-secundario);
+  --acento: var(--color-acento);
 }
 
