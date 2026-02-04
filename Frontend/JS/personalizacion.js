@@ -24,34 +24,70 @@ class PersonalizacionColores {
     // Evento de submit del formulario
     this.form.addEventListener('submit', (e) => {
       e.preventDefault();
+      // Antes de guardar, sincroniza los valores de los inputs de texto a los de color
+      Object.keys(this.inputs).forEach(key => {
+        const colorInput = this.inputs[key];
+        const textInput = colorInput.parentElement.querySelector('input[type="text"]');
+        if (textInput && textInput.value.match(/^#([0-9a-fA-F]{6})$/)) {
+          colorInput.value = textInput.value;
+          this.actualizarColor(key, textInput.value);
+        }
+      });
       this.guardarColores();
     });
 
-    // Actualizar los inputs de texto readonly cuando cambia el color
+    // Sincronizar color → texto y texto → color
     Object.keys(this.inputs).forEach(key => {
       const colorInput = this.inputs[key];
       const textInput = colorInput.parentElement.querySelector('input[type="text"]');
-      
-      if (textInput) {
-        colorInput.addEventListener('input', (e) => {
-          textInput.value = e.target.value;
-          this.actualizarColor(key, e.target.value);
-        });
-      }
+      if (!textInput) return;
+      // Hacer editable el input de texto
+      textInput.removeAttribute('readonly');
+
+      // Cuando cambia el input de color
+      colorInput.addEventListener('input', (e) => {
+        textInput.value = e.target.value;
+        this.actualizarColor(key, e.target.value);
+      });
+
+      // Cuando cambia el input de texto (hex manual)
+      textInput.addEventListener('input', (e) => {
+        const val = e.target.value;
+        if (/^#([0-9a-fA-F]{6})$/.test(val)) {
+          colorInput.value = val;
+          this.actualizarColor(key, val);
+        }
+      });
     });
   }
 
   actualizarColor(tipo, valor) {
 
-    // Actualizar CSS custom property (convertir a formato compatible)
-    const nombreVar = this.convertirNombre(tipo);
-    document.documentElement.style.setProperty(nombreVar, valor);
+     // Actualizar CSS custom property (convertir a formato compatible)
+     const nombreVar = this.convertirNombre(tipo);
+     document.documentElement.style.setProperty(nombreVar, valor);
 
-    // Actualizar preview
-    this.actualizarPreview(tipo, valor);
+     // Actualizar preview
+     this.actualizarPreview(tipo, valor);
 
-    // Marcar como modificado
-    document.body.classList.add('tema-personalizado');
+     // Actualizar badges de vista previa en tiempo real
+     this.actualizarBadgesPreview();
+
+     // Marcar como modificado
+     document.body.classList.add('tema-personalizado');
+    }
+
+  actualizarBadgesPreview() {
+    // Selecciona todos los badges de la vista previa
+    const badges = document.querySelectorAll('.preview-badge');
+    if (!badges.length) return;
+    // Orden: 0=primario, 1=secundario, 2=acento (según el HTML)
+    const colorPrimario = this.inputs.colorPrimario.value;
+    const colorSecundario = this.inputs.colorSecundario.value;
+    const colorAcento = this.inputs.colorAcento.value;
+    if (badges[0]) badges[0].style.backgroundColor = colorPrimario;
+    if (badges[1]) badges[1].style.backgroundColor = colorSecundario;
+    if (badges[2]) badges[2].style.backgroundColor = colorAcento;
   }
 
   convertirNombre(tipo) {

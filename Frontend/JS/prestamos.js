@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let libroSeleccionado = null
   let libroCantidadDisponible = null
   let prestamoEditandoId = null
-  const bootstrap = window.bootstrap // Declare the bootstrap variable
+  const bootstrap = window.bootstrap 
   let todosLosPrestamos = [] // Variable para guardar todos los préstamos sin filtrar
   const libroCantidadEl = document.getElementById('libroCantidadDisponible')
 
@@ -68,34 +68,68 @@ document.addEventListener("DOMContentLoaded", () => {
         })
       }
 
-      // Aplicar filtro de período (hoy, semana, mes) usando fecha_prestamo
+      // Aplicar filtro de periodo (hoy, semana, mes, mes-especifico) usando fecha_prestamo
       const periodoSeleccionado = filtroPeriodo ? filtroPeriodo.value : "todos"
       if (periodoSeleccionado && periodoSeleccionado !== "todos") {
         const hoy = new Date()
-        // Normalizar sin tiempo
         const inicioHoy = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
 
-        prestamos = prestamos.filter(p => {
-          const fechaPrestamo = new Date(p.fecha_prestamo)
-          const fechaNorm = new Date(fechaPrestamo.getFullYear(), fechaPrestamo.getMonth(), fechaPrestamo.getDate())
-
-          if (periodoSeleccionado === 'hoy') {
+        if (periodoSeleccionado === 'hoy') {
+          prestamos = prestamos.filter(p => {
+            const fechaPrestamo = new Date(p.fecha_prestamo)
+            const fechaNorm = new Date(fechaPrestamo.getFullYear(), fechaPrestamo.getMonth(), fechaPrestamo.getDate())
             return fechaNorm.getTime() === inicioHoy.getTime()
-          }
-          if (periodoSeleccionado === 'semana') { // últimos 7 días (incluye hoy)
-            const hace7 = new Date(inicioHoy)
-            hace7.setDate(hace7.getDate() - 6) // rango de 7 días: hoy y 6 atrás
+          })
+        } else if (periodoSeleccionado === 'semana') {
+          const hace7 = new Date(inicioHoy)
+          hace7.setDate(hace7.getDate() - 6)
+          prestamos = prestamos.filter(p => {
+            const fechaPrestamo = new Date(p.fecha_prestamo)
+            const fechaNorm = new Date(fechaPrestamo.getFullYear(), fechaPrestamo.getMonth(), fechaPrestamo.getDate())
             return fechaNorm >= hace7 && fechaNorm <= inicioHoy
-          }
-          if (periodoSeleccionado === 'mes') { // últimos 30 días (incluye hoy)
-            const hace30 = new Date(inicioHoy)
-            hace30.setDate(hace30.getDate() - 29)
+          })
+        } else if (periodoSeleccionado === 'mes') {
+          const hace30 = new Date(inicioHoy)
+          hace30.setDate(hace30.getDate() - 29)
+          prestamos = prestamos.filter(p => {
+            const fechaPrestamo = new Date(p.fecha_prestamo)
+            const fechaNorm = new Date(fechaPrestamo.getFullYear(), fechaPrestamo.getMonth(), fechaPrestamo.getDate())
             return fechaNorm >= hace30 && fechaNorm <= inicioHoy
+          })
+        } else if (periodoSeleccionado === 'personalizado') {
+          const fechaDesdeInput = document.getElementById('fechaDesde');
+          const fechaHastaInput = document.getElementById('fechaHasta');
+          if (fechaDesdeInput && fechaHastaInput && fechaDesdeInput.value && fechaHastaInput.value) {
+            const desde = new Date(fechaDesdeInput.value);
+            const hasta = new Date(fechaHastaInput.value);
+            prestamos = prestamos.filter(p => {
+              const fechaPrestamo = new Date(p.fecha_prestamo);
+              return fechaPrestamo >= desde && fechaPrestamo <= hasta;
+            });
           }
-          // personalizado: aquí se podría implementar cuando existan campos de rango
-          return true
-        })
+        }
       }
+  // Mostrar/ocultar el rango personalizado según el filtro seleccionado
+  if (filtroPeriodo) {
+    filtroPeriodo.addEventListener('change', () => {
+      const rangoContainer = document.getElementById('rangoPersonalizado');
+      if (filtroPeriodo.value === 'personalizado') {
+        if (rangoContainer) rangoContainer.style.display = '';
+      } else {
+        if (rangoContainer) rangoContainer.style.display = 'none';
+      }
+      cargarPrestamos(buscadorPrestamo ? buscadorPrestamo.value.trim() : "");
+    });
+  }
+  // Actualizar al cambiar fechas del rango
+  const fechaDesdeInput = document.getElementById('fechaDesde');
+  const fechaHastaInput = document.getElementById('fechaHasta');
+  if (fechaDesdeInput) fechaDesdeInput.addEventListener('change', () => {
+    if (filtroPeriodo.value === 'personalizado') cargarPrestamos(buscadorPrestamo ? buscadorPrestamo.value.trim() : "");
+  });
+  if (fechaHastaInput) fechaHastaInput.addEventListener('change', () => {
+    if (filtroPeriodo.value === 'personalizado') cargarPrestamos(buscadorPrestamo ? buscadorPrestamo.value.trim() : "");
+  });
 
       tablaPrestamos.innerHTML = ""
 
@@ -230,14 +264,195 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Manejo del buscador
+  // Manejo del buscador (incluye búsqueda por ID)
   const handleBuscar = debounce(() => {
     const valor = buscadorPrestamo ? buscadorPrestamo.value.trim() : ""
     if (valor === "") {
       cargarPrestamos()
-    } else {
-      cargarPrestamos(valor)
+      return
     }
+
+    // Buscar por ID si el valor es tipo #P001, P001, 001, 0001, 0, etc.
+    const idMatch = valor.match(/^#?P?(0*\d+)$/i)
+    if (idMatch) {
+      // Buscar por ID exacto, permitiendo ceros a la izquierda y el 0
+      const idBuscado = Number(idMatch[1]);
+      if (!isNaN(idBuscado)) {
+        // Filtrar localmente si ya se cargaron préstamos
+        if (todosLosPrestamos.length > 0) {
+          const resultado = todosLosPrestamos.filter(p => Number(p.id_prestamo) === idBuscado)
+          // Renderizar solo ese préstamo
+          tablaPrestamos.innerHTML = ""
+          if (resultado.length === 0) {
+            tablaPrestamos.innerHTML = `
+              <tr>
+                <td colspan="8" class="text-center text-muted py-4">
+                  <i class="bi bi-inbox fs-1"></i><br>
+                  No se encontró el préstamo con ID #P${String(idBuscado).padStart(3, "0")}
+                </td>
+              </tr>
+            `
+            actualizarContadores(todosLosPrestamos)
+            return
+          }
+          resultado.forEach((prestamo) => {
+            const fila = document.createElement("tr")
+            // ... Copiar la lógica de renderizado de fila de préstamo ...
+            // Calcular días restantes y determinar estado
+            const fechaDevolucion = new Date(prestamo.fecha_devolucion)
+            const fechaActual = new Date()
+            const diferenciaDias = Math.ceil((fechaDevolucion - fechaActual) / (1000 * 60 * 60 * 24))
+
+            let badgeEstado = ""
+            let diasRestantes = ""
+            let opcionesAcciones = ""
+
+            if (prestamo.estado === "Devuelto") {
+              badgeEstado = '<span class="badge-estado badge-devuelto">DEVUELTO</span>'
+              diasRestantes = '<span class="dias-restantes dias-completo">Completado</span>'
+              opcionesAcciones = `
+                <button class="btn btn-sm btn-action" disabled>
+                  <i class="bi bi-check-all"></i>
+                </button>
+              `
+            } else if (prestamo.estado === "Vencido" || diferenciaDias < 0) {
+              badgeEstado = '<span class="badge-estado badge-vencido">VENCIDO</span>'
+              diasRestantes = `<span class="dias-restantes dias-vencido">${Math.abs(diferenciaDias)} días (Vencido)</span>`
+              opcionesAcciones = `
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-action dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-three-dots-vertical"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item btn-editar-prestamo" href="#" data-id="${prestamo.id_prestamo}"><i class="bi bi-pencil me-2"></i>Editar</a></li>
+                    <li><a class="dropdown-item btn-devolucion" href="#" data-id="${prestamo.id_prestamo}" data-miembro="${prestamo.nombre_miembro}" data-libro="${prestamo.titulo_libro}"><i class="bi bi-check-circle me-2"></i>Registrar Devolución</a></li>
+                    <li><a class="dropdown-item text-danger btn-multa" href="#" data-id="${prestamo.id_prestamo}" data-miembro="${prestamo.nombre_miembro}" data-libro="${prestamo.titulo_libro}" data-dias="${Math.abs(diferenciaDias)}" data-fecha="${prestamo.fecha_prestamo}"><i class="bi bi-currency-dollar me-2"></i>Enviar Multa</a></li>
+                  </ul>
+                </div>
+              `
+            } else {
+              badgeEstado = '<span class="badge-estado badge-activo">ACTIVO</span>'
+              if (diferenciaDias <= 3) {
+                diasRestantes = `<span class="dias-restantes dias-urgente">${diferenciaDias} días</span>`
+              } else {
+                diasRestantes = `<span class="dias-restantes dias-normal">${diferenciaDias} días</span>`
+              }
+              opcionesAcciones = `
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-action dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-three-dots-vertical"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item btn-editar-prestamo" href="#" data-id="${prestamo.id_prestamo}"><i class="bi bi-pencil me-2"></i>Editar</a></li>
+                    <li><a class="dropdown-item btn-devolucion" href="#" data-id="${prestamo.id_prestamo}" data-miembro="${prestamo.nombre_miembro}" data-libro="${prestamo.titulo_libro}"><i class="bi bi-check-circle me-2"></i>Registrar Devolución</a></li>
+                    <li><a class="dropdown-item btn-recordatorio" href="#" data-id="${prestamo.id_prestamo}" data-miembro="${prestamo.nombre_miembro}" data-libro="${prestamo.titulo_libro}" data-fecha="${prestamo.fecha_prestamo}"><i class="bi bi-envelope me-2"></i>Enviar Recordatorio</a></li>
+                  </ul>
+                </div>
+              `
+            }
+
+            fila.innerHTML = `
+              <td><strong>#P${String(prestamo.id_prestamo).padStart(3, "0")}</strong></td>
+              <td>${prestamo.nombre_miembro}</td>
+              <td>${prestamo.titulo_libro}</td>
+              <td>${new Date(prestamo.fecha_prestamo).toLocaleDateString("es-CO")}</td>
+              <td>${new Date(prestamo.fecha_devolucion).toLocaleDateString("es-CO")}</td>
+              <td>${badgeEstado}</td>
+              <td>${diasRestantes}</td>
+              <td>${opcionesAcciones}</td>
+            `
+            tablaPrestamos.appendChild(fila)
+          })
+          actualizarContadores(todosLosPrestamos)
+          return
+        }
+        // Si no hay préstamos cargados, buscar en backend
+        fetch(`/api/prestamos/${idBuscado}`, { credentials: "include" })
+          .then(resp => resp.json())
+          .then(prestamo => {
+            tablaPrestamos.innerHTML = ""
+            if (!prestamo || !prestamo.id_prestamo) {
+              tablaPrestamos.innerHTML = `
+                <tr>
+                  <td colspan="8" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox fs-1"></i><br>
+                    No se encontró el préstamo con ID #P${String(idBuscado).padStart(3, "0")}
+                  </td>
+                </tr>
+              `
+              return
+            }
+            const fila = document.createElement("tr")
+            // ... Copiar la lógica de renderizado de fila de préstamo ...
+            const fechaDevolucion = new Date(prestamo.fecha_devolucion)
+            const fechaActual = new Date()
+            const diferenciaDias = Math.ceil((fechaDevolucion - fechaActual) / (1000 * 60 * 60 * 24))
+
+            let badgeEstado = ""
+            let diasRestantes = ""
+            let opcionesAcciones = ""
+
+            if (prestamo.estado === "Devuelto") {
+              badgeEstado = '<span class="badge-estado badge-devuelto">DEVUELTO</span>'
+              diasRestantes = '<span class="dias-restantes dias-completo">Completado</span>'
+              opcionesAcciones = `
+                <button class="btn btn-sm btn-action" disabled>
+                  <i class="bi bi-check-all"></i>
+                </button>
+              `
+            } else if (prestamo.estado === "Vencido" || diferenciaDias < 0) {
+              badgeEstado = '<span class="badge-estado badge-vencido">VENCIDO</span>'
+              diasRestantes = `<span class="dias-restantes dias-vencido">${Math.abs(diferenciaDias)} días (Vencido)</span>`
+              opcionesAcciones = `
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-action dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-three-dots-vertical"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item btn-editar-prestamo" href="#" data-id="${prestamo.id_prestamo}"><i class="bi bi-pencil me-2"></i>Editar</a></li>
+                    <li><a class="dropdown-item btn-devolucion" href="#" data-id="${prestamo.id_prestamo}" data-miembro="${prestamo.nombre_miembro}" data-libro="${prestamo.titulo_libro}"><i class="bi bi-check-circle me-2"></i>Registrar Devolución</a></li>
+                    <li><a class="dropdown-item text-danger btn-multa" href="#" data-id="${prestamo.id_prestamo}" data-miembro="${prestamo.nombre_miembro}" data-libro="${prestamo.titulo_libro}" data-dias="${Math.abs(diferenciaDias)}" data-fecha="${prestamo.fecha_prestamo}"><i class="bi bi-currency-dollar me-2"></i>Enviar Multa</a></li>
+                  </ul>
+                </div>
+              `
+            } else {
+              badgeEstado = '<span class="badge-estado badge-activo">ACTIVO</span>'
+              if (diferenciaDias <= 3) {
+                diasRestantes = `<span class="dias-restantes dias-urgente">${diferenciaDias} días</span>`
+              } else {
+                diasRestantes = `<span class="dias-restantes dias-normal">${diferenciaDias} días</span>`
+              }
+              opcionesAcciones = `
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-action dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-three-dots-vertical"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item btn-editar-prestamo" href="#" data-id="${prestamo.id_prestamo}"><i class="bi bi-pencil me-2"></i>Editar</a></li>
+                    <li><a class="dropdown-item btn-devolucion" href="#" data-id="${prestamo.id_prestamo}" data-miembro="${prestamo.nombre_miembro}" data-libro="${prestamo.titulo_libro}"><i class="bi bi-check-circle me-2"></i>Registrar Devolución</a></li>
+                    <li><a class="dropdown-item btn-recordatorio" href="#" data-id="${prestamo.id_prestamo}" data-miembro="${prestamo.nombre_miembro}" data-libro="${prestamo.titulo_libro}" data-fecha="${prestamo.fecha_prestamo}"><i class="bi bi-envelope me-2"></i>Enviar Recordatorio</a></li>
+                  </ul>
+                </div>
+              `
+            }
+
+            fila.innerHTML = `
+              <td><strong>#P${String(prestamo.id_prestamo).padStart(3, "0")}</strong></td>
+              <td>${prestamo.nombre_miembro}</td>
+              <td>${prestamo.titulo_libro}</td>
+              <td>${new Date(prestamo.fecha_prestamo).toLocaleDateString("es-CO")}</td>
+              <td>${new Date(prestamo.fecha_devolucion).toLocaleDateString("es-CO")}</td>
+              <td>${badgeEstado}</td>
+              <td>${diasRestantes}</td>
+              <td>${opcionesAcciones}</td>
+            `
+            tablaPrestamos.appendChild(fila)
+          })
+        return
+      }
+    }
+    // Si no es búsqueda por ID, buscar normalmente
+    cargarPrestamos(valor)
   }, 300)
 
   if (buscadorPrestamo) buscadorPrestamo.addEventListener("input", handleBuscar)
